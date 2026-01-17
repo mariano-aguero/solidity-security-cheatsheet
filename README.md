@@ -6,11 +6,9 @@
 
 A comprehensive, interactive security guide for Solidity and Ethereum smart contract development. Learn about common vulnerabilities, security patterns, and best practices.
 
-<p align="center">
-  <img src="preview.png" alt="Cheatsheet Preview" width="800">
-</p>
-
 ## 🌐 Live Demo
+
+[![Cheatsheet Preview](preview.svg)](https://mariano-aguero.github.io/solidity-security-cheatsheet)
 
 **[View the Cheatsheet →](https://mariano-aguero.github.io/solidity-security-cheatsheet)**
 

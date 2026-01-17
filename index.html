@@ -1,0 +1,2689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solidity Security Cheatsheet</title>
+    <meta name="description" content="Comprehensive security guide for Solidity and Ethereum smart contract development. Vulnerabilities, patterns, and best practices.">
+    <meta name="keywords" content="solidity, ethereum, security, smart contracts, web3, blockchain, vulnerabilities">
+    <meta name="author" content="Solidity Security Guide">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Solidity Security Cheatsheet">
+    <meta property="og:description" content="Comprehensive security guide for Solidity and Ethereum smart contracts">
+    <meta property="og:type" content="website">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Highlight.js for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+
+    <style>
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-tertiary: #1a2332;
+            --bg-code: #0d1117;
+            --accent-primary: #00ff88;
+            --accent-secondary: #00d4ff;
+            --accent-warning: #ff6b35;
+            --accent-danger: #ff3860;
+            --accent-purple: #a855f7;
+            --text-primary: #e4e8ef;
+            --text-secondary: #8b949e;
+            --text-muted: #5c6370;
+            --border-color: #21293a;
+            --border-glow: rgba(0, 255, 136, 0.3);
+            --gradient-main: linear-gradient(135deg, #00ff88 0%, #00d4ff 100%);
+            --shadow-glow: 0 0 40px rgba(0, 255, 136, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 80px;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            min-height: 100vh;
+        }
+
+        /* Animated background grid */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Header */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: rgba(10, 14, 23, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 1.25rem;
+            background: var(--gradient-main);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--gradient-main);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            -webkit-text-fill-color: var(--bg-primary);
+        }
+
+        .header-links {
+            margin-left: auto;
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .header-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .header-links a:hover {
+            color: var(--accent-primary);
+        }
+
+        .github-star {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .github-star:hover {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+        }
+
+        /* Layout */
+        .container {
+            display: flex;
+            margin-top: 70px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 70px;
+            width: 280px;
+            height: calc(100vh - 70px);
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            padding: 1.5rem 0;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+        .sidebar-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .sidebar-title {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            padding: 0 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .sidebar-nav a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0.6rem 1.5rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-nav a:hover {
+            color: var(--text-primary);
+            background: rgba(0, 255, 136, 0.05);
+        }
+
+        .sidebar-nav a.active {
+            color: var(--accent-primary);
+            background: rgba(0, 255, 136, 0.1);
+            border-left-color: var(--accent-primary);
+        }
+
+        .nav-icon {
+            font-size: 1rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main content */
+        main {
+            margin-left: 280px;
+            flex: 1;
+            padding: 3rem 4rem;
+            max-width: 1000px;
+        }
+
+        /* Hero section */
+        .hero {
+            text-align: center;
+            padding: 4rem 0 5rem;
+            position: relative;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 1px;
+            background: var(--gradient-main);
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 50px;
+            font-size: 0.8rem;
+            color: var(--accent-primary);
+            margin-bottom: 1.5rem;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            letter-spacing: -2px;
+        }
+
+        .hero h1 .gradient {
+            background: var(--gradient-main);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-description {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            margin-top: 2.5rem;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: var(--gradient-main);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        /* Section styles */
+        section {
+            margin-bottom: 4rem;
+        }
+
+        .section-header {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        h2 .icon {
+            font-size: 1.5rem;
+        }
+
+        h3 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin: 2.5rem 0 1rem;
+            color: var(--accent-secondary);
+        }
+
+        h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 1.5rem 0 0.75rem;
+            color: var(--text-primary);
+        }
+
+        p {
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+        }
+
+        /* Vulnerability cards */
+        .vuln-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s;
+        }
+
+        .vuln-card:hover {
+            border-color: var(--accent-primary);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .vuln-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .vuln-number {
+            width: 48px;
+            height: 48px;
+            background: var(--gradient-main);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--bg-primary);
+            flex-shrink: 0;
+        }
+
+        .vuln-title-wrap {
+            flex: 1;
+        }
+
+        .vuln-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .vuln-subtitle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .severity-badge {
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .severity-critical {
+            background: rgba(255, 56, 96, 0.15);
+            color: var(--accent-danger);
+            border: 1px solid rgba(255, 56, 96, 0.3);
+        }
+
+        .severity-high {
+            background: rgba(255, 107, 53, 0.15);
+            color: var(--accent-warning);
+            border: 1px solid rgba(255, 107, 53, 0.3);
+        }
+
+        .severity-medium {
+            background: rgba(168, 85, 247, 0.15);
+            color: var(--accent-purple);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+        }
+
+        /* Impact box */
+        .impact-box {
+            background: rgba(255, 56, 96, 0.1);
+            border-left: 4px solid var(--accent-danger);
+            padding: 1rem 1.25rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1rem 0;
+        }
+
+        .impact-box strong {
+            color: var(--accent-danger);
+        }
+
+        /* Code blocks */
+        .code-block {
+            position: relative;
+            margin: 1.25rem 0;
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--bg-code);
+            border: 1px solid var(--border-color);
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .code-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .code-label.vulnerable {
+            color: var(--accent-danger);
+        }
+
+        .code-label.secure {
+            color: var(--accent-primary);
+        }
+
+        .code-label.warning {
+            color: var(--accent-warning);
+        }
+
+        .copy-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .copy-btn:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        .copy-btn.copied {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        pre {
+            margin: 0;
+            padding: 1.25rem;
+            overflow-x: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        pre::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        pre::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        pre::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Inline code */
+        p code, li code {
+            background: var(--bg-tertiary);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            color: var(--accent-secondary);
+        }
+
+        /* Prevention list */
+        .prevention-list {
+            background: rgba(0, 255, 136, 0.05);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .prevention-list h4 {
+            color: var(--accent-primary);
+            margin-top: 0;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .prevention-list ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .prevention-list li {
+            position: relative;
+            padding-left: 1.75rem;
+            margin-bottom: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .prevention-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--accent-primary);
+            font-weight: bold;
+        }
+
+        /* Tables */
+        .table-wrapper {
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(0, 255, 136, 0.03);
+        }
+
+        /* Pattern cards */
+        .pattern-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .pattern-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s;
+        }
+
+        .pattern-card:hover {
+            border-color: var(--accent-secondary);
+            transform: translateY(-2px);
+        }
+
+        .pattern-card h4 {
+            color: var(--accent-secondary);
+            margin-top: 0;
+        }
+
+        /* Checklist */
+        .checklist {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .checklist-item:last-child {
+            border-bottom: none;
+        }
+
+        .checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        /* Tool badges */
+        .tool-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .tool-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1.25rem;
+            transition: all 0.2s;
+        }
+
+        .tool-card:hover {
+            border-color: var(--accent-primary);
+        }
+
+        .tool-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .tool-name a {
+            color: inherit;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tool-name a:hover {
+            color: var(--accent-primary);
+        }
+
+        .tool-name a::after {
+            content: '↗';
+            font-size: 0.8em;
+            opacity: 0.5;
+        }
+
+        .tool-type {
+            font-size: 0.8rem;
+            color: var(--accent-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .tool-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Resources links */
+        .resource-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .resource-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .resource-link:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        /* Footer */
+        footer {
+            margin-left: 280px;
+            padding: 3rem 4rem;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        footer a {
+            color: var(--accent-primary);
+            text-decoration: none;
+        }
+
+        /* Back to top */
+        .back-to-top {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 48px;
+            height: 48px;
+            background: var(--gradient-main);
+            border: none;
+            border-radius: 12px;
+            color: var(--bg-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0, 255, 136, 0.4);
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 1024px) {
+            .sidebar {
+                display: none;
+            }
+
+            main {
+                margin-left: 0;
+                padding: 2rem;
+            }
+
+            footer {
+                margin-left: 0;
+                padding: 2rem;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero-stats {
+                gap: 1.5rem;
+            }
+
+            .stat-value {
+                font-size: 2rem;
+            }
+        }
+
+        @media (max-width: 600px) {
+            header {
+                padding: 0 1rem;
+            }
+
+            .header-links {
+                display: none;
+            }
+
+            main {
+                padding: 1.5rem;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero-stats {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .vuln-card {
+                padding: 1.25rem;
+            }
+
+            pre {
+                font-size: 0.75rem;
+                padding: 1rem;
+            }
+        }
+
+        /* Collapsible sections */
+        .collapsible {
+            cursor: pointer;
+        }
+
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .collapsible-content.expanded {
+            max-height: none;
+        }
+
+        /* Types list */
+        .types-list {
+            margin: 1rem 0;
+            padding-left: 1.5rem;
+        }
+
+        .types-list li {
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .types-list strong {
+            color: var(--text-primary);
+        }
+
+        /* Modifier table compact */
+        .modifier-table {
+            margin: 1.5rem 0;
+        }
+
+        .modifier-row {
+            display: grid;
+            grid-template-columns: 150px 180px 1fr;
+            gap: 1rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+            align-items: center;
+        }
+
+        .modifier-row:first-child {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .modifier-name {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-primary);
+            font-size: 0.9rem;
+        }
+
+        .modifier-contract {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <div class="logo-icon">🔐</div>
+            Solidity Security
+        </div>
+        <div class="header-links">
+            <a href="#vulnerabilities">Vulnerabilities</a>
+            <a href="#patterns">Patterns</a>
+            <a href="#best-practices">Best Practices</a>
+            <a href="#tools">Tools</a>
+            <a href="https://github.com" target="_blank" class="github-star">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                </svg>
+                Star on GitHub
+            </a>
+        </div>
+    </header>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">Getting Started</div>
+                <nav class="sidebar-nav">
+                    <a href="#overview"><span class="nav-icon">📖</span> Overview</a>
+                </nav>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">Vulnerabilities</div>
+                <nav class="sidebar-nav">
+                    <a href="#reentrancy"><span class="nav-icon">🔄</span> Reentrancy</a>
+                    <a href="#overflow"><span class="nav-icon">💥</span> Integer Overflow</a>
+                    <a href="#access-control"><span class="nav-icon">🔑</span> Access Control</a>
+                    <a href="#tx-origin"><span class="nav-icon">🎣</span> tx.origin Phishing</a>
+                    <a href="#delegatecall"><span class="nav-icon">📞</span> Unsafe Delegatecall</a>
+                    <a href="#frontrunning"><span class="nav-icon">🏃</span> Front-Running</a>
+                    <a href="#dos"><span class="nav-icon">🚫</span> Denial of Service</a>
+                    <a href="#oracle"><span class="nav-icon">📊</span> Oracle Manipulation</a>
+                    <a href="#signature"><span class="nav-icon">✍️</span> Signature Replay</a>
+                    <a href="#external-calls"><span class="nav-icon">📡</span> Unsafe External Calls</a>
+                    <a href="#timestamp"><span class="nav-icon">⏰</span> Timestamp Dependence</a>
+                    <a href="#randomness"><span class="nav-icon">🎲</span> Weak Randomness</a>
+                    <a href="#force-feeding"><span class="nav-icon">💰</span> Force Feeding ETH</a>
+                    <a href="#storage-collision"><span class="nav-icon">💾</span> Storage Collision</a>
+                </nav>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">Security</div>
+                <nav class="sidebar-nav">
+                    <a href="#patterns"><span class="nav-icon">🛡️</span> Security Patterns</a>
+                    <a href="#best-practices"><span class="nav-icon">✨</span> Best Practices</a>
+                    <a href="#gas"><span class="nav-icon">⛽</span> Gas Optimization</a>
+                    <a href="#checklist"><span class="nav-icon">✅</span> Security Checklist</a>
+                </nav>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">Resources</div>
+                <nav class="sidebar-nav">
+                    <a href="#tools"><span class="nav-icon">🔧</span> Security Tools</a>
+                    <a href="#openzeppelin"><span class="nav-icon">📚</span> OpenZeppelin</a>
+                    <a href="#resources"><span class="nav-icon">🔗</span> Useful Links</a>
+                </nav>
+            </div>
+        </aside>
+
+        <main>
+            <!-- Hero -->
+            <section class="hero" id="overview">
+                <div class="hero-badge">
+                    <span>🔒</span> Security Reference Guide
+                </div>
+                <h1>
+                    Solidity <span class="gradient">Security</span><br>Cheatsheet
+                </h1>
+                <p class="hero-description">
+                    A comprehensive guide to smart contract security. Learn about common vulnerabilities, security patterns, and best practices for Ethereum development.
+                </p>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <div class="stat-value">15+</div>
+                        <div class="stat-label">Vulnerabilities</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">50+</div>
+                        <div class="stat-label">Code Examples</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">10+</div>
+                        <div class="stat-label">Security Tools</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Vulnerabilities Section -->
+            <section id="vulnerabilities">
+                <div class="section-header">
+                    <h2><span class="icon">⚠️</span> Common Vulnerabilities</h2>
+                    <p>Critical security issues in smart contract development with real-world examples and mitigations.</p>
+                </div>
+
+                <!-- 1. Reentrancy -->
+                <article class="vuln-card" id="reentrancy">
+                    <div class="vuln-header">
+                        <div class="vuln-number">01</div>
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">Reentrancy Attack</h3>
+                            <p class="vuln-subtitle">External calls allow recursive exploitation</p>
+                        </div>
+                        <span class="severity-badge severity-critical">Critical</span>
+                    </div>
+
+                    <p>An attacker exploits external calls that callback into the vulnerable contract before state updates complete. This enables draining funds through recursive calls.</p>
+
+                    <div class="impact-box">
+                        <strong>Real-world Impact:</strong> The DAO hack (2016) — $60M stolen using this exact vulnerability.
+                    </div>
+
+                    <h4>Types of Reentrancy:</h4>
+                    <ul class="types-list">
+                        <li><strong>Single-function:</strong> Attacking the same function recursively</li>
+                        <li><strong>Cross-function:</strong> Attacking different functions that share state</li>
+                        <li><strong>Cross-contract:</strong> Exploiting reentrancy across multiple contracts</li>
+                        <li><strong>Read-only:</strong> Exploiting view functions during reentrancy state</li>
+                    </ul>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ VULNERABLE</span>
+                            <button class="copy-btn" onclick="copyCode(this)">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                                Copy
+                            </button>
+                        </div>
+                        <pre><code class="language-solidity">contract VulnerableBank {
+    mapping(address => uint) public balances;
+
+    function withdraw(uint amount) external {
+        require(balances[msg.sender] >= amount, "Insufficient");
+
+        // External call BEFORE state update - DANGEROUS!
+        (bool success, ) = msg.sender.call{value: amount}("");
+        require(success, "Transfer failed");
+
+        // Attacker's receive() calls withdraw() again
+        // before this line executes
+        balances[msg.sender] -= amount;
+    }
+}
+
+// Attacker Contract
+contract Attacker {
+    VulnerableBank public bank;
+
+    function attack() external payable {
+        bank.deposit{value: msg.value}();
+        bank.withdraw(msg.value);
+    }
+
+    receive() external payable {
+        if (address(bank).balance >= 1 ether) {
+            bank.withdraw(1 ether); // Re-enter!
+        }
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE - Checks-Effects-Interactions</span>
+                            <button class="copy-btn" onclick="copyCode(this)">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                                Copy
+                            </button>
+                        </div>
+                        <pre><code class="language-solidity">contract SecureBank {
+    mapping(address => uint) public balances;
+
+    function withdraw(uint amount) external {
+        // 1. CHECKS
+        require(balances[msg.sender] >= amount, "Insufficient");
+
+        // 2. EFFECTS - Update state BEFORE external call
+        balances[msg.sender] -= amount;
+
+        // 3. INTERACTIONS - External call LAST
+        (bool success, ) = msg.sender.call{value: amount}("");
+        require(success, "Transfer failed");
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE - Using ReentrancyGuard</span>
+                            <button class="copy-btn" onclick="copyCode(this)">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                                Copy
+                            </button>
+                        </div>
+                        <pre><code class="language-solidity">import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
+contract SecureBankWithGuard is ReentrancyGuard {
+    mapping(address => uint) public balances;
+
+    function withdraw(uint amount) external nonReentrant {
+        require(balances[msg.sender] >= amount);
+        balances[msg.sender] -= amount;
+        (bool success, ) = msg.sender.call{value: amount}("");
+        require(success);
+    }
+
+    function transfer(address to, uint amount) external nonReentrant {
+        require(balances[msg.sender] >= amount);
+        balances[msg.sender] -= amount;
+        balances[to] += amount;
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="prevention-list">
+                        <h4>🛡️ Prevention</h4>
+                        <ul>
+                            <li>Always use Checks-Effects-Interactions pattern</li>
+                            <li>Use <code>ReentrancyGuard</code> for all state-changing functions</li>
+                            <li>Consider <code>nonReentrant</code> on view functions in DeFi protocols</li>
+                            <li>Be aware of cross-contract reentrancy in multi-contract systems</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <!-- 2. Integer Overflow -->
+                <article class="vuln-card" id="overflow">
+                    <div class="vuln-header">
+                        <div class="vuln-number">02</div>
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">Integer Overflow/Underflow</h3>
+                            <p class="vuln-subtitle">Arithmetic operations wrap around silently</p>
+                        </div>
+                        <span class="severity-badge severity-critical">Critical</span>
+                    </div>
+
+                    <p>In Solidity &lt; 0.8.0, arithmetic operations that exceed type bounds wrap around to unexpected values, enabling attackers to mint unlimited tokens or bypass balance checks.</p>
+
+                    <div class="impact-box">
+                        <strong>Real-world Impact:</strong> BEC Token (2018) — Unlimited token minting via overflow.
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ VULNERABLE (Solidity &lt; 0.8.0)</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">contract VulnerableToken {
+    mapping(address => uint256) public balances;
+
+    // Overflow: receivers.length * value can wrap to small number
+    function batchTransfer(address[] memory receivers, uint256 value) public {
+        uint256 total = receivers.length * value; // Can overflow!
+        require(balances[msg.sender] >= total);
+
+        balances[msg.sender] -= total;
+        for (uint i = 0; i < receivers.length; i++) {
+            balances[receivers[i]] += value;
+        }
+    }
+
+    // Underflow: 0 - 1 = MAX_UINT256
+    function withdraw(uint256 amount) public {
+        balances[msg.sender] -= amount; // If balance is 0, becomes huge!
+        payable(msg.sender).transfer(amount);
+    }
+}
+
+// Example: uint8 max = 255
+// 255 + 1 = 0 (overflow)
+// 0 - 1 = 255 (underflow)</code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE - Solidity >= 0.8.0</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">// Solidity >= 0.8.0 has automatic overflow checks
+contract SecureToken {
+    mapping(address => uint256) public balances;
+
+    function batchTransfer(address[] memory receivers, uint256 value) public {
+        uint256 total = receivers.length * value; // Reverts on overflow
+        require(balances[msg.sender] >= total);
+
+        balances[msg.sender] -= total; // Reverts on underflow
+        for (uint i = 0; i < receivers.length; i++) {
+            balances[receivers[i]] += value;
+        }
+    }
+}
+
+// For legacy code, use SafeMath:
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+
+contract LegacySecure {
+    using SafeMath for uint256;
+
+    function transfer(address to, uint256 amount) public {
+        balances[msg.sender] = balances[msg.sender].sub(amount);
+        balances[to] = balances[to].add(amount);
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label warning">⚠️ CAREFUL - Unchecked blocks</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">// Only use unchecked when mathematically proven safe
+contract OptimizedLoop {
+    function sum(uint256[] calldata arr) external pure returns (uint256 total) {
+        uint256 length = arr.length;
+        for (uint256 i = 0; i < length;) {
+            total += arr[i];
+            unchecked { ++i; } // Safe: can't overflow before gas limit
+        }
+    }
+
+    // ❌ DANGEROUS
+    function unsafeDecrement(uint256 x) external pure returns (uint256) {
+        unchecked { return x - 1; } // Can underflow if x == 0!
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="prevention-list">
+                        <h4>🛡️ Prevention</h4>
+                        <ul>
+                            <li>Use Solidity >= 0.8.0 for automatic overflow checks</li>
+                            <li>Use SafeMath library for older versions</li>
+                            <li>Only use <code>unchecked</code> when mathematically proven safe</li>
+                            <li>Be extra careful with multiplication before division</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <!-- 3. Access Control -->
+                <article class="vuln-card" id="access-control">
+                    <div class="vuln-header">
+                        <div class="vuln-number">03</div>
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">Access Control Vulnerabilities</h3>
+                            <p class="vuln-subtitle">Missing or incorrect permission checks</p>
+                        </div>
+                        <span class="severity-badge severity-critical">Critical</span>
+                    </div>
+
+                    <p>Missing or incorrect access controls allow unauthorized users to execute privileged functions, potentially taking over the entire contract.</p>
+
+                    <div class="impact-box">
+                        <strong>Real-world Impact:</strong> Parity Multisig Wallet (2017) — $30M stolen, $150M frozen.
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ VULNERABLE</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">contract VulnerableWallet {
+    address public owner;
+
+    constructor() { owner = msg.sender; }
+
+    // Anyone can call this!
+    function setOwner(address _newOwner) public {
+        owner = _newOwner;
+    }
+
+    // Anyone can withdraw!
+    function withdraw() public {
+        payable(msg.sender).transfer(address(this).balance);
+    }
+}
+
+// Unprotected initializer (proxy pattern)
+contract VulnerableImplementation {
+    address public owner;
+    bool public initialized;
+
+    // Anyone can call initialize on the implementation!
+    function initialize(address _owner) external {
+        require(!initialized);
+        owner = _owner;
+        initialized = true;
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE - Role-based Access</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">import "@openzeppelin/contracts/access/AccessControl.sol";
+
+contract SecureProtocol is AccessControl {
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+
+    constructor() {
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(ADMIN_ROLE, msg.sender);
+    }
+
+    function adminFunction() external onlyRole(ADMIN_ROLE) {
+        // Only admins can call
+    }
+
+    function operatorFunction() external onlyRole(OPERATOR_ROLE) {
+        // Only operators can call
+    }
+}
+
+// Protected initializer for proxies
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+
+contract SecureImplementation is Initializable {
+    address public owner;
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() { _disableInitializers(); }
+
+    function initialize(address _owner) external initializer {
+        owner = _owner;
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="prevention-list">
+                        <h4>🛡️ Prevention</h4>
+                        <ul>
+                            <li>Always use access control modifiers on sensitive functions</li>
+                            <li>Use OpenZeppelin's Ownable or AccessControl</li>
+                            <li>Protect initializers in upgradeable contracts</li>
+                            <li>Use <code>_disableInitializers()</code> in implementation constructors</li>
+                            <li>Review function visibility carefully (public vs external vs internal)</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <!-- 4. tx.origin -->
+                <article class="vuln-card" id="tx-origin">
+                    <div class="vuln-header">
+                        <div class="vuln-number">04</div>
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">tx.origin Authentication</h3>
+                            <p class="vuln-subtitle">Phishing attacks via contract intermediary</p>
+                        </div>
+                        <span class="severity-badge severity-high">High</span>
+                    </div>
+
+                    <p>Using <code>tx.origin</code> for authentication allows phishing attacks where a malicious contract tricks users into executing transactions that drain their wallets.</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ VULNERABLE</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">contract VulnerableWallet {
+    address public owner;
+
+    function transfer(address to, uint amount) public {
+        // tx.origin is the EOA that started the transaction
+        require(tx.origin == owner, "Not owner");
+        payable(to).transfer(amount);
+    }
+}
+
+// Attacker contract
+contract PhishingAttack {
+    VulnerableWallet wallet;
+    address attacker;
+
+    constructor(address _wallet) {
+        wallet = VulnerableWallet(_wallet);
+        attacker = msg.sender;
+    }
+
+    // Victim calls this thinking it's legitimate
+    function claimReward() external {
+        // tx.origin is still the victim!
+        wallet.transfer(attacker, address(wallet).balance);
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE - Use msg.sender</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">contract SecureWallet {
+    address public owner;
+
+    function transfer(address to, uint amount) public {
+        require(msg.sender == owner, "Not owner");
+        payable(to).transfer(amount);
+    }
+}
+
+// Acceptable use: prevent contracts from calling
+contract NoContractCalls {
+    modifier noContracts() {
+        require(tx.origin == msg.sender, "No contracts");
+        _;
+    }
+
+    function sensitiveFunction() external noContracts {
+        // Only EOAs can call
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="prevention-list">
+                        <h4>🛡️ Prevention</h4>
+                        <ul>
+                            <li>Never use <code>tx.origin</code> for authentication</li>
+                            <li>Always use <code>msg.sender</code> for access control</li>
+                            <li>Only use <code>tx.origin</code> to check if caller is an EOA</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <!-- 5. Delegatecall -->
+                <article class="vuln-card" id="delegatecall">
+                    <div class="vuln-header">
+                        <div class="vuln-number">05</div>
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">Unsafe Delegatecall</h3>
+                            <p class="vuln-subtitle">External code modifies your storage</p>
+                        </div>
+                        <span class="severity-badge severity-critical">Critical</span>
+                    </div>
+
+                    <p><code>delegatecall</code> executes code in the context of the calling contract, using the caller's storage. This can lead to storage corruption or complete contract takeover.</p>
+
+                    <div class="impact-box">
+                        <strong>Real-world Impact:</strong> Parity Wallet (2017) — $150M frozen forever.
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ VULNERABLE</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">contract VulnerableProxy {
+    address public owner;        // Slot 0
+    address public implementation; // Slot 1
+
+    // Anyone can call with arbitrary address!
+    function execute(address target, bytes calldata data) external {
+        target.delegatecall(data); // Attacker's code with OUR storage
+    }
+}
+
+// Attacker deploys this and calls execute()
+contract MaliciousImpl {
+    address public owner; // Maps to slot 0 of proxy
+
+    function attack() external {
+        owner = msg.sender; // Overwrites proxy's owner!
+    }
+}
+
+// Storage collision in proxy pattern
+contract ImplementationV1 {
+    uint256 public value; // Slot 0 - COLLIDES with proxy's owner!
+
+    function setValue(uint256 _v) external {
+        value = _v; // Overwrites proxy's storage!
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE - OpenZeppelin Proxy</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+
+contract SecureImplementation is UUPSUpgradeable {
+    // Storage starts AFTER proxy reserved slots
+    uint256 public value;
+
+    function _authorizeUpgrade(address newImpl) internal override {
+        // Add access control here
+    }
+}
+
+// Unstructured storage pattern avoids collisions
+contract UnstructuredStorageProxy {
+    // Random slot location
+    bytes32 private constant IMPL_SLOT =
+        bytes32(uint256(keccak256("eip1967.proxy.implementation")) - 1);
+
+    function _getImplementation() internal view returns (address impl) {
+        bytes32 slot = IMPL_SLOT;
+        assembly { impl := sload(slot) }
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="prevention-list">
+                        <h4>🛡️ Prevention</h4>
+                        <ul>
+                            <li>Never delegatecall to user-controlled addresses</li>
+                            <li>Use established proxy patterns (ERC-1967, UUPS, Transparent)</li>
+                            <li>Be extremely careful with storage layout in upgradeable contracts</li>
+                            <li>Use OpenZeppelin's upgradeable contracts library</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <!-- 6. Front-Running -->
+                <article class="vuln-card" id="frontrunning">
+                    <div class="vuln-header">
+                        <div class="vuln-number">06</div>
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">Front-Running & MEV</h3>
+                            <p class="vuln-subtitle">Transaction ordering exploitation</p>
+                        </div>
+                        <span class="severity-badge severity-high">High</span>
+                    </div>
+
+                    <p>Attackers observe pending transactions in the mempool and submit their own with higher gas to execute first, extracting value through sandwich attacks and displacement.</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ VULNERABLE</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">contract VulnerableDEX {
+    function swap(address tokenIn, address tokenOut, uint amountIn) external {
+        // Attacker sees this in mempool
+        // Front-runs with their own swap
+        // Back-runs after victim's swap at worse price
+        uint price = getPrice(tokenIn, tokenOut);
+        // Execute swap...
+    }
+}
+
+contract VulnerableAuction {
+    function submitSolution(bytes32 answer) external {
+        // Attacker sees the answer in mempool
+        // Submits with higher gas to win
+        require(keccak256(abi.encode(answer)) == puzzle);
+        winner = msg.sender;
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ MITIGATED - Commit-Reveal</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">contract SecureAuction {
+    mapping(address => bytes32) public commits;
+    uint256 public commitDeadline;
+    uint256 public revealDeadline;
+
+    // Phase 1: Commit (hidden)
+    function commit(bytes32 hashedBid) external {
+        require(block.timestamp < commitDeadline);
+        commits[msg.sender] = hashedBid;
+    }
+
+    // Phase 2: Reveal (after commit phase)
+    function reveal(uint256 bidAmount, bytes32 salt) external {
+        require(block.timestamp >= commitDeadline);
+        require(block.timestamp < revealDeadline);
+
+        bytes32 hash = keccak256(abi.encodePacked(
+            bidAmount, salt, msg.sender
+        ));
+        require(commits[msg.sender] == hash, "Invalid");
+        // Process bid...
+    }
+}
+
+// Slippage protection for DEX
+contract ProtectedDEX {
+    function swap(
+        address tokenIn,
+        address tokenOut,
+        uint amountIn,
+        uint minAmountOut,  // Slippage protection
+        uint deadline       // Time protection
+    ) external {
+        require(block.timestamp <= deadline, "Expired");
+        uint amountOut = calculateOutput(tokenIn, tokenOut, amountIn);
+        require(amountOut >= minAmountOut, "Slippage");
+        // Execute...
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="prevention-list">
+                        <h4>🛡️ Prevention</h4>
+                        <ul>
+                            <li>Use commit-reveal patterns for sensitive operations</li>
+                            <li>Implement slippage protection and deadlines</li>
+                            <li>Use batch auctions for fair ordering</li>
+                            <li>Consider private mempools (Flashbots Protect)</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <!-- 7. DoS -->
+                <article class="vuln-card" id="dos">
+                    <div class="vuln-header">
+                        <div class="vuln-number">07</div>
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">Denial of Service (DoS)</h3>
+                            <p class="vuln-subtitle">Blocking legitimate users</p>
+                        </div>
+                        <span class="severity-badge severity-high">High</span>
+                    </div>
+
+                    <p>Attackers prevent legitimate users from using the contract by causing functions to fail or consume excessive gas through unbounded loops or external call failures.</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ VULNERABLE</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">contract VulnerableAirdrop {
+    address[] public recipients;
+
+    function airdrop(uint amount) external {
+        for (uint i = 0; i < recipients.length; i++) {
+            // If ANY transfer fails, entire airdrop fails
+            // Attacker adds contract that reverts in receive()
+            payable(recipients[i]).transfer(amount);
+        }
+    }
+}
+
+contract VulnerableVoting {
+    address[] public voters;
+
+    function countVotes() external view returns (uint) {
+        uint count = 0;
+        // Gas limit exceeded if too many voters
+        for (uint i = 0; i < voters.length; i++) {
+            if (hasVoted[voters[i]]) count++;
+        }
+        return count;
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE - Pull Pattern</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">contract SecureAirdrop {
+    mapping(address => uint) public claimable;
+
+    function setClaimable(address[] calldata recipients, uint amount) external {
+        for (uint i = 0; i < recipients.length; i++) {
+            claimable[recipients[i]] += amount;
+        }
+    }
+
+    // Users pull their own funds
+    function claim() external {
+        uint amount = claimable[msg.sender];
+        require(amount > 0, "Nothing to claim");
+        claimable[msg.sender] = 0;
+        (bool success, ) = msg.sender.call{value: amount}("");
+        require(success);
+    }
+}
+
+// Paginated processing
+contract SecureVoting {
+    uint public lastProcessedIndex;
+
+    function countVotesBatch(uint batchSize) external returns (bool done) {
+        uint end = lastProcessedIndex + batchSize;
+        if (end > voterCount) end = voterCount;
+
+        for (uint i = lastProcessedIndex; i < end; i++) {
+            // Process batch...
+        }
+        lastProcessedIndex = end;
+        return lastProcessedIndex >= voterCount;
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="prevention-list">
+                        <h4>🛡️ Prevention</h4>
+                        <ul>
+                            <li>Use Pull over Push pattern for payments</li>
+                            <li>Implement pagination for loops</li>
+                            <li>Set maximum batch sizes</li>
+                            <li>Avoid unbounded arrays in storage</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <!-- 8. Oracle -->
+                <article class="vuln-card" id="oracle">
+                    <div class="vuln-header">
+                        <div class="vuln-number">08</div>
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">Oracle & Price Manipulation</h3>
+                            <p class="vuln-subtitle">Flash loan price attacks</p>
+                        </div>
+                        <span class="severity-badge severity-critical">Critical</span>
+                    </div>
+
+                    <p>Attackers manipulate on-chain price data using flash loans to temporarily skew prices, enabling exploitation of DeFi lending and trading protocols.</p>
+
+                    <div class="impact-box">
+                        <strong>Real-world Impact:</strong> Numerous DeFi hacks totaling hundreds of millions in losses.
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ VULNERABLE - Spot Price</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">contract VulnerableLending {
+    IUniswapV2Pair public pair;
+
+    function getPrice() public view returns (uint) {
+        (uint reserve0, uint reserve1, ) = pair.getReserves();
+        // Spot price can be manipulated with flash loans!
+        return reserve0 * 1e18 / reserve1;
+    }
+
+    function borrow(uint collateral) external {
+        uint price = getPrice(); // Manipulated!
+        uint borrowLimit = collateral * price / 1e18;
+        // Attacker deposits, manipulates price up,
+        // borrows max, price returns, profit!
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE - Chainlink Oracle</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+
+contract SecureLending {
+    AggregatorV3Interface internal priceFeed;
+    uint256 public constant STALENESS = 1 hours;
+
+    function getLatestPrice() public view returns (int) {
+        (
+            uint80 roundId,
+            int price,
+            uint startedAt,
+            uint updatedAt,
+            uint80 answeredInRound
+        ) = priceFeed.latestRoundData();
+
+        // Validate the data
+        require(price > 0, "Invalid price");
+        require(updatedAt > 0, "Round not complete");
+        require(block.timestamp - updatedAt < STALENESS, "Stale");
+        require(answeredInRound >= roundId, "Stale round");
+
+        return price;
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="prevention-list">
+                        <h4>🛡️ Prevention</h4>
+                        <ul>
+                            <li>Never use spot prices for critical operations</li>
+                            <li>Implement TWAP (Time-Weighted Average Price)</li>
+                            <li>Use established oracles (Chainlink, Band Protocol)</li>
+                            <li>Validate oracle data freshness and bounds</li>
+                            <li>Implement circuit breakers for extreme price movements</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <!-- 9. Signature Replay -->
+                <article class="vuln-card" id="signature">
+                    <div class="vuln-header">
+                        <div class="vuln-number">09</div>
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">Signature Replay Attacks</h3>
+                            <p class="vuln-subtitle">Reusing valid signatures maliciously</p>
+                        </div>
+                        <span class="severity-badge severity-high">High</span>
+                    </div>
+
+                    <p>Valid signatures can be reused maliciously on the same contract, different chains, or different contracts if proper replay protection is not implemented.</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ VULNERABLE</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">contract VulnerablePermit {
+    function permitTransfer(
+        address from,
+        address to,
+        uint amount,
+        bytes memory signature
+    ) external {
+        bytes32 hash = keccak256(abi.encodePacked(from, to, amount));
+        address signer = recoverSigner(hash, signature);
+        require(signer == from, "Invalid");
+
+        // Same signature can be used multiple times!
+        // And on other chains where contract is deployed!
+        balances[from] -= amount;
+        balances[to] += amount;
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE - EIP-712 with Nonce</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">contract SecurePermit {
+    mapping(address => uint) public nonces;
+    bytes32 public immutable DOMAIN_SEPARATOR;
+
+    bytes32 public constant PERMIT_TYPEHASH = keccak256(
+        "Permit(address from,address to,uint256 amount,uint256 nonce,uint256 deadline)"
+    );
+
+    constructor() {
+        DOMAIN_SEPARATOR = keccak256(abi.encode(
+            keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+            keccak256(bytes("SecurePermit")),
+            keccak256(bytes("1")),
+            block.chainid,      // Chain protection
+            address(this)       // Contract protection
+        ));
+    }
+
+    function permitTransfer(
+        address from, address to, uint amount,
+        uint deadline, uint8 v, bytes32 r, bytes32 s
+    ) external {
+        require(block.timestamp <= deadline, "Expired");
+
+        bytes32 structHash = keccak256(abi.encode(
+            PERMIT_TYPEHASH, from, to, amount,
+            nonces[from]++,  // Increment nonce
+            deadline
+        ));
+
+        bytes32 digest = keccak256(abi.encodePacked(
+            "\x19\x01", DOMAIN_SEPARATOR, structHash
+        ));
+
+        address signer = ecrecover(digest, v, r, s);
+        require(signer != address(0) && signer == from);
+        // Transfer...
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="prevention-list">
+                        <h4>🛡️ Prevention</h4>
+                        <ul>
+                            <li>Include nonces in signed messages</li>
+                            <li>Include chain ID (EIP-712 domain separator)</li>
+                            <li>Include contract address in domain</li>
+                            <li>Add deadline/expiration to signatures</li>
+                            <li>Use OpenZeppelin's EIP-712 implementation</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <!-- Additional vulnerabilities as compact cards -->
+                <article class="vuln-card" id="external-calls">
+                    <div class="vuln-header">
+                        <div class="vuln-number">10</div>
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">Unsafe External Calls</h3>
+                            <p class="vuln-subtitle">Unchecked return values and gas issues</p>
+                        </div>
+                        <span class="severity-badge severity-high">High</span>
+                    </div>
+
+                    <p>Improper handling of external calls can lead to silent failures, unexpected behavior, or reentrancy vulnerabilities.</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE - Safe Token Transfer</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
+contract SafeTokenContract {
+    using SafeERC20 for IERC20;
+
+    function transferTokens(IERC20 token, address to, uint amount) external {
+        // Handles non-standard tokens (USDT, etc.)
+        token.safeTransfer(to, amount);
+    }
+}
+
+// Safe ETH transfer
+function sendETH(address to, uint amount) internal {
+    (bool success, ) = to.call{value: amount}("");
+    require(success, "Transfer failed");
+}
+
+// Gas-limited callback
+function safeCallback(address target) external {
+    (bool success, ) = target.call{gas: 50000}(
+        abi.encodeWithSignature("callback()")
+    );
+    // Continue even if fails
+}</code></pre>
+                    </div>
+                </article>
+
+                <article class="vuln-card" id="timestamp">
+                    <div class="vuln-header">
+                        <div class="vuln-number">11</div>
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">Timestamp Dependence</h3>
+                            <p class="vuln-subtitle">Miner-manipulable block.timestamp</p>
+                        </div>
+                        <span class="severity-badge severity-medium">Medium</span>
+                    </div>
+
+                    <p>Miners can manipulate <code>block.timestamp</code> within ~15 seconds, making it unreliable for randomness or exact comparisons.</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE - Longer Windows</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">contract SaferTimestamp {
+    uint public constant MIN_DELAY = 1 days;
+    uint public executeTime;
+
+    function schedule() external {
+        executeTime = block.timestamp + MIN_DELAY;
+    }
+
+    function execute() external {
+        // Use >= not ==, longer windows
+        require(block.timestamp >= executeTime, "Too early");
+    }
+}
+
+// Or use block numbers for precision
+contract BlockBasedTiming {
+    uint public constant BLOCKS_PER_DAY = 7200;
+    uint public unlockBlock;
+
+    function lock() external {
+        unlockBlock = block.number + BLOCKS_PER_DAY;
+    }
+}</code></pre>
+                    </div>
+                </article>
+
+                <article class="vuln-card" id="randomness">
+                    <div class="vuln-header">
+                        <div class="vuln-number">12</div>
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">Weak Randomness</h3>
+                            <p class="vuln-subtitle">Predictable on-chain sources</p>
+                        </div>
+                        <span class="severity-badge severity-high">High</span>
+                    </div>
+
+                    <p>On-chain randomness sources (<code>block.timestamp</code>, <code>block.difficulty</code>, <code>blockhash</code>) are predictable and manipulable.</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE - Chainlink VRF</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">import "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBaseV2.sol";
+
+contract SecureRandom is VRFConsumerBaseV2 {
+    VRFCoordinatorV2Interface COORDINATOR;
+    mapping(uint256 => uint256) public requestToRandom;
+
+    function requestRandom() external returns (uint256) {
+        return COORDINATOR.requestRandomWords(
+            keyHash, subscriptionId, 3, 100000, 1
+        );
+    }
+
+    function fulfillRandomWords(
+        uint256 requestId,
+        uint256[] memory randomWords
+    ) internal override {
+        requestToRandom[requestId] = randomWords[0];
+    }
+}</code></pre>
+                    </div>
+                </article>
+
+                <article class="vuln-card" id="force-feeding">
+                    <div class="vuln-header">
+                        <div class="vuln-number">13</div>
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">Force Feeding Ether</h3>
+                            <p class="vuln-subtitle">ETH sent without triggering receive()</p>
+                        </div>
+                        <span class="severity-badge severity-medium">Medium</span>
+                    </div>
+
+                    <p>Ether can be forced into contracts via <code>selfdestruct</code> or mining rewards without triggering <code>receive()</code>, breaking balance-dependent logic.</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE - Track Deposits</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">contract SecureGame {
+    uint public totalDeposits; // Track separately
+
+    function play() external payable {
+        require(msg.value == 1 ether);
+        totalDeposits += msg.value;
+
+        // Use tracked variable, not address(this).balance
+        if (totalDeposits == 10 ether) {
+            winner = msg.sender;
+        }
+    }
+}</code></pre>
+                    </div>
+                </article>
+
+                <article class="vuln-card" id="storage-collision">
+                    <div class="vuln-header">
+                        <div class="vuln-number">14</div>
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">Storage Collision</h3>
+                            <p class="vuln-subtitle">Upgradeable contract storage corruption</p>
+                        </div>
+                        <span class="severity-badge severity-critical">Critical</span>
+                    </div>
+
+                    <p>Changing storage layout in upgradeable contracts corrupts existing data. Variables must only be appended, never removed or reordered.</p>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE - Storage Gaps</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">contract ImplementationV1 {
+    uint256 public value;    // Slot 0
+    address public owner;    // Slot 1
+    uint256[48] private __gap; // Reserve slots
+}
+
+contract ImplementationV2 {
+    uint256 public value;    // Slot 0 - Same
+    address public owner;    // Slot 1 - Same
+    uint256 public newVar;   // Slot 2 - Uses gap
+    uint256[47] private __gap; // Reduced by 1
+}
+
+// Never remove, never reorder!
+// Only append at the end</code></pre>
+                    </div>
+                </article>
+            </section>
+
+            <!-- Security Patterns -->
+            <section id="patterns">
+                <div class="section-header">
+                    <h2><span class="icon">🛡️</span> Security Patterns</h2>
+                    <p>Battle-tested patterns to secure your smart contracts.</p>
+                </div>
+
+                <div class="pattern-grid">
+                    <div class="pattern-card">
+                        <h4>Checks-Effects-Interactions</h4>
+                        <p>Validate inputs, update state, then make external calls. Prevents reentrancy and ensures consistent state.</p>
+                    </div>
+                    <div class="pattern-card">
+                        <h4>Pull over Push</h4>
+                        <p>Let users withdraw funds instead of pushing payments. Prevents DoS from failing transfers.</p>
+                    </div>
+                    <div class="pattern-card">
+                        <h4>Emergency Stop</h4>
+                        <p>Circuit breaker pattern with Pausable. Allows halting operations during incidents.</p>
+                    </div>
+                    <div class="pattern-card">
+                        <h4>Rate Limiting</h4>
+                        <p>Cooldown periods between actions. Limits damage from compromised accounts.</p>
+                    </div>
+                    <div class="pattern-card">
+                        <h4>Commit-Reveal</h4>
+                        <p>Two-phase submission hides data until reveal. Prevents front-running.</p>
+                    </div>
+                    <div class="pattern-card">
+                        <h4>Guard Check</h4>
+                        <p>Modifiers for common validations. Clean, reusable input validation.</p>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-label secure">Combined Pattern Example</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <pre><code class="language-solidity">import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract SecureVault is ReentrancyGuard, Pausable, Ownable {
+    mapping(address => uint) public balances;
+    mapping(address => uint) public lastAction;
+    uint public constant COOLDOWN = 1 hours;
+
+    error ZeroAmount();
+    error Cooldown();
+
+    modifier rateLimit() {
+        if (block.timestamp < lastAction[msg.sender] + COOLDOWN)
+            revert Cooldown();
+        lastAction[msg.sender] = block.timestamp;
+        _;
+    }
+
+    function withdraw(uint amount)
+        external
+        nonReentrant
+        whenNotPaused
+        rateLimit
+    {
+        // Checks
+        if (amount == 0) revert ZeroAmount();
+        require(balances[msg.sender] >= amount);
+
+        // Effects
+        balances[msg.sender] -= amount;
+
+        // Interactions
+        (bool success, ) = msg.sender.call{value: amount}("");
+        require(success);
+    }
+
+    function pause() external onlyOwner { _pause(); }
+    function unpause() external onlyOwner { _unpause(); }
+}</code></pre>
+                </div>
+            </section>
+
+            <!-- Best Practices -->
+            <section id="best-practices">
+                <div class="section-header">
+                    <h2><span class="icon">✨</span> Best Practices</h2>
+                    <p>Code quality guidelines for secure, maintainable contracts.</p>
+                </div>
+
+                <h3>Variables & Visibility</h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-label">Variable Best Practices</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <pre><code class="language-solidity">// Always specify visibility
+uint256 private _balance;      // Only this contract
+uint256 internal _rate;        // This + inherited
+uint256 public totalSupply;    // Public (creates getter)
+
+// Immutable & constant save gas
+address public immutable FACTORY;   // Set once in constructor
+uint256 public constant FEE = 30;   // Compile-time constant
+
+// Pack structs for storage efficiency
+struct User {
+    uint128 balance;    // Slot 0 (16 bytes)
+    uint64 timestamp;   // Slot 0 (8 bytes)
+    uint32 nonce;       // Slot 0 (4 bytes)
+    bool active;        // Slot 0 (1 byte)
+    address addr;       // Slot 1
+}</code></pre>
+                </div>
+
+                <h3>Functions</h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-label">Function Declaration Order</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <pre><code class="language-solidity">function example(uint256 amount)
+    external           // 1. Visibility
+    payable           // 2. Mutability
+    nonReentrant      // 3. Custom modifiers
+    whenNotPaused
+    onlyOwner
+    returns (uint256) // 4. Returns
+{
+    // Implementation
+}
+
+// Prefer external over public for gas
+function externalOnly() external { }
+
+// Use view/pure when possible
+function calculate(uint a, uint b) public pure returns (uint) {
+    return a + b;
+}</code></pre>
+                </div>
+
+                <h3>Error Handling</h3>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-label">Custom Errors (Gas Efficient)</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <pre><code class="language-solidity">// Custom errors save gas (Solidity >= 0.8.4)
+error InsufficientBalance(uint256 available, uint256 required);
+error Unauthorized(address caller);
+error DeadlineExpired(uint256 deadline, uint256 current);
+
+function withdraw(uint256 amount) external {
+    if (balances[msg.sender] < amount) {
+        revert InsufficientBalance(balances[msg.sender], amount);
+    }
+}
+
+// Events for all state changes
+event Transfer(address indexed from, address indexed to, uint256 amount);
+event ConfigUpdated(bytes32 indexed key, uint256 oldValue, uint256 newValue);</code></pre>
+                </div>
+            </section>
+
+            <!-- Gas Optimization -->
+            <section id="gas">
+                <div class="section-header">
+                    <h2><span class="icon">⛽</span> Gas Optimization</h2>
+                    <p>Techniques to reduce transaction costs.</p>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-label">Gas Saving Techniques</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <pre><code class="language-solidity">// Use calldata for read-only arrays
+function process(uint256[] calldata data) external { }
+
+// Cache storage in memory for loops
+function sum() external view returns (uint256 total) {
+    uint256 len = items.length; // Cache
+    for (uint256 i = 0; i < len;) {
+        total += items[i];
+        unchecked { ++i; } // Safe increment
+    }
+}
+
+// Storage packing (32 byte slots)
+// Bad: 3 slots
+uint256 a;  // Slot 0
+uint8 b;    // Slot 1
+uint256 c;  // Slot 2
+
+// Good: 2 slots
+uint256 a;  // Slot 0
+uint256 c;  // Slot 1
+uint8 b;    // Slot 1 (packed)
+
+// Use bytes32 instead of string
+bytes32 public constant NAME = "MyContract";
+
+// Short-circuit: put cheaper checks first
+require(amount > 0 && balances[msg.sender] >= amount);</code></pre>
+                </div>
+            </section>
+
+            <!-- Checklist -->
+            <section id="checklist">
+                <div class="section-header">
+                    <h2><span class="icon">✅</span> Security Checklist</h2>
+                    <p>Pre-deployment verification steps.</p>
+                </div>
+
+                <h3>Pre-Deployment</h3>
+                <div class="checklist">
+                    <div class="checklist-item">
+                        <div class="checkbox"></div>
+                        <span>Use latest stable Solidity version</span>
+                    </div>
+                    <div class="checklist-item">
+                        <div class="checkbox"></div>
+                        <span>Run static analysis (<a href="https://github.com/crytic/slither" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline;">Slither</a>, <a href="https://github.com/Consensys/mythril" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline;">Mythril</a>)</span>
+                    </div>
+                    <div class="checklist-item">
+                        <div class="checkbox"></div>
+                        <span>Achieve >95% test coverage</span>
+                    </div>
+                    <div class="checklist-item">
+                        <div class="checkbox"></div>
+                        <span>Perform fuzz testing (<a href="https://book.getfoundry.sh/" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline;">Foundry</a>/<a href="https://github.com/crytic/echidna" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline;">Echidna</a>)</span>
+                    </div>
+                    <div class="checklist-item">
+                        <div class="checkbox"></div>
+                        <span>Internal code review</span>
+                    </div>
+                    <div class="checklist-item">
+                        <div class="checkbox"></div>
+                        <span>External audit for critical contracts</span>
+                    </div>
+                </div>
+
+                <h3>Configuration</h3>
+                <div class="checklist">
+                    <div class="checklist-item">
+                        <div class="checkbox"></div>
+                        <span>Verify and publish source code</span>
+                    </div>
+                    <div class="checklist-item">
+                        <div class="checkbox"></div>
+                        <span>Use multisig for admin functions</span>
+                    </div>
+                    <div class="checklist-item">
+                        <div class="checkbox"></div>
+                        <span>Implement timelock for upgrades</span>
+                    </div>
+                    <div class="checklist-item">
+                        <div class="checkbox"></div>
+                        <span>Configure emergency pause</span>
+                    </div>
+                </div>
+
+                <h3>Post-Deployment</h3>
+                <div class="checklist">
+                    <div class="checklist-item">
+                        <div class="checkbox"></div>
+                        <span>Set up monitoring (Tenderly, Defender)</span>
+                    </div>
+                    <div class="checklist-item">
+                        <div class="checkbox"></div>
+                        <span>Create incident response plan</span>
+                    </div>
+                    <div class="checklist-item">
+                        <div class="checkbox"></div>
+                        <span>Launch bug bounty program</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tools -->
+            <section id="tools">
+                <div class="section-header">
+                    <h2><span class="icon">🔧</span> Security Tools</h2>
+                    <p>Essential tools for smart contract security.</p>
+                </div>
+
+                <div class="tool-grid">
+                    <div class="tool-card">
+                        <div class="tool-name">
+                            <a href="https://github.com/crytic/slither" target="_blank" rel="noopener noreferrer">Slither</a>
+                        </div>
+                        <div class="tool-type">Static Analysis</div>
+                        <div class="tool-desc">Fast vulnerability detection</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-name">
+                            <a href="https://github.com/Consensys/mythril" target="_blank" rel="noopener noreferrer">Mythril</a>
+                        </div>
+                        <div class="tool-type">Symbolic Execution</div>
+                        <div class="tool-desc">Deep vulnerability analysis</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-name">
+                            <a href="https://github.com/crytic/echidna" target="_blank" rel="noopener noreferrer">Echidna</a>
+                        </div>
+                        <div class="tool-type">Fuzzer</div>
+                        <div class="tool-desc">Property-based testing</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-name">
+                            <a href="https://book.getfoundry.sh/" target="_blank" rel="noopener noreferrer">Foundry</a>
+                        </div>
+                        <div class="tool-type">Testing Framework</div>
+                        <div class="tool-desc">Fast tests + fuzzing</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-name">
+                            <a href="https://www.certora.com/" target="_blank" rel="noopener noreferrer">Certora</a>
+                        </div>
+                        <div class="tool-type">Formal Verification</div>
+                        <div class="tool-desc">Mathematical proofs</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-name">
+                            <a href="https://tenderly.co/" target="_blank" rel="noopener noreferrer">Tenderly</a>
+                        </div>
+                        <div class="tool-type">Monitoring</div>
+                        <div class="tool-desc">Real-time alerts</div>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-label">Quick Commands</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <pre><code class="language-bash"># Slither
+slither . --print human-summary
+
+# Mythril
+myth analyze contracts/MyContract.sol
+
+# Foundry fuzzing
+forge test --fuzz-runs 10000
+
+# Echidna
+echidna-test . --contract MyContract</code></pre>
+                </div>
+            </section>
+
+            <!-- OpenZeppelin -->
+            <section id="openzeppelin">
+                <div class="section-header">
+                    <h2><span class="icon">📚</span> OpenZeppelin Reference</h2>
+                    <p>Essential imports and modifiers.</p>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-label">Common Imports</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <pre><code class="language-solidity">// Security
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
+
+// Access Control
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable2Step.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+
+// Tokens
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+
+// Utilities
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+
+// Upgradeability
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";</code></pre>
+                </div>
+
+                <h3>Modifier Reference</h3>
+                <div class="modifier-table">
+                    <div class="modifier-row">
+                        <span>Modifier</span>
+                        <span>Contract</span>
+                        <span>Purpose</span>
+                    </div>
+                    <div class="modifier-row">
+                        <span class="modifier-name">onlyOwner</span>
+                        <span class="modifier-contract">Ownable</span>
+                        <span>Restrict to owner</span>
+                    </div>
+                    <div class="modifier-row">
+                        <span class="modifier-name">nonReentrant</span>
+                        <span class="modifier-contract">ReentrancyGuard</span>
+                        <span>Prevent reentrancy</span>
+                    </div>
+                    <div class="modifier-row">
+                        <span class="modifier-name">whenNotPaused</span>
+                        <span class="modifier-contract">Pausable</span>
+                        <span>Require not paused</span>
+                    </div>
+                    <div class="modifier-row">
+                        <span class="modifier-name">whenPaused</span>
+                        <span class="modifier-contract">Pausable</span>
+                        <span>Require paused</span>
+                    </div>
+                    <div class="modifier-row">
+                        <span class="modifier-name">onlyRole(role)</span>
+                        <span class="modifier-contract">AccessControl</span>
+                        <span>Require specific role</span>
+                    </div>
+                    <div class="modifier-row">
+                        <span class="modifier-name">initializer</span>
+                        <span class="modifier-contract">Initializable</span>
+                        <span>Run once on init</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Resources -->
+            <section id="resources">
+                <div class="section-header">
+                    <h2><span class="icon">🔗</span> Useful Resources</h2>
+                    <p>Documentation, learning, and security references.</p>
+                </div>
+
+                <h3>Documentation</h3>
+                <div class="resource-links">
+                    <a href="https://docs.soliditylang.org/" target="_blank" class="resource-link">
+                        📖 Solidity Docs
+                    </a>
+                    <a href="https://docs.openzeppelin.com/contracts/" target="_blank" class="resource-link">
+                        🛡️ OpenZeppelin
+                    </a>
+                    <a href="https://docs.chain.link/" target="_blank" class="resource-link">
+                        🔗 Chainlink Docs
+                    </a>
+                </div>
+
+                <h3>Security</h3>
+                <div class="resource-links">
+                    <a href="https://swcregistry.io/" target="_blank" class="resource-link">
+                        ⚠️ SWC Registry
+                    </a>
+                    <a href="https://consensys.github.io/smart-contract-best-practices/" target="_blank" class="resource-link">
+                        📋 Consensys Best Practices
+                    </a>
+                    <a href="https://github.com/crytic/building-secure-contracts" target="_blank" class="resource-link">
+                        🏗️ Trail of Bits
+                    </a>
+                    <a href="https://immunefi.com/" target="_blank" class="resource-link">
+                        🐛 Immunefi
+                    </a>
+                </div>
+
+                <h3>Learning</h3>
+                <div class="resource-links">
+                    <a href="https://www.damnvulnerabledefi.xyz/" target="_blank" class="resource-link">
+                        🎮 Damn Vulnerable DeFi
+                    </a>
+                    <a href="https://ethernaut.openzeppelin.com/" target="_blank" class="resource-link">
+                        🎯 Ethernaut
+                    </a>
+                    <a href="https://rekt.news/" target="_blank" class="resource-link">
+                        📰 Rekt News
+                    </a>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <footer>
+        <p>Made with 🔐 for the Ethereum community</p>
+        <p style="margin-top: 0.5rem;">
+            <a href="https://github.com" target="_blank">GitHub</a> ·
+            Last updated January 2026
+        </p>
+    </footer>
+
+    <button class="back-to-top" onclick="scrollToTop()">↑</button>
+
+    <!-- Highlight.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/solidity.min.js"></script>
+
+    <script>
+        // Initialize syntax highlighting
+        hljs.highlightAll();
+
+        // Copy code functionality
+        function copyCode(button) {
+            const codeBlock = button.closest('.code-block').querySelector('code');
+            navigator.clipboard.writeText(codeBlock.textContent).then(() => {
+                button.classList.add('copied');
+                button.innerHTML = `
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Copied!
+                `;
+                setTimeout(() => {
+                    button.classList.remove('copied');
+                    button.innerHTML = `
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy
+                    `;
+                }, 2000);
+            });
+        }
+
+        // Back to top button
+        const backToTop = document.querySelector('.back-to-top');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 500) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
+            }
+        });
+
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Active nav link highlighting
+        const navLinks = document.querySelectorAll('.sidebar-nav a');
+        const sections = document.querySelectorAll('section, article');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (scrollY >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

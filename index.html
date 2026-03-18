@@ -8,10 +8,22 @@
     <meta name="keywords" content="solidity, ethereum, security, smart contracts, web3, blockchain, vulnerabilities">
     <meta name="author" content="Solidity Security Guide">
 
+    <!-- Canonical -->
+    <link rel="canonical" href="https://mariano-aguero.github.io/solidity-security-cheatsheet/">
+
     <!-- Open Graph -->
     <meta property="og:title" content="Solidity Security Cheatsheet">
-    <meta property="og:description" content="Comprehensive security guide for Solidity and Ethereum smart contracts">
+    <meta property="og:description" content="Comprehensive security guide for Solidity and Ethereum smart contracts — 20+ vulnerabilities, DeFi checklists, real exploits, and 12+ tools.">
     <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mariano-aguero.github.io/solidity-security-cheatsheet/">
+    <meta property="og:image" content="https://raw.githubusercontent.com/mariano-aguero/solidity-security-cheatsheet/main/preview.svg">
+    <meta property="og:site_name" content="Solidity Security Cheatsheet">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Solidity Security Cheatsheet">
+    <meta name="twitter:description" content="20+ vulnerability cards, DeFi checklists, real exploits — the definitive Solidity security reference.">
+    <meta name="twitter:image" content="https://raw.githubusercontent.com/mariano-aguero/solidity-security-cheatsheet/main/preview.svg">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -151,6 +163,20 @@
         .github-star:hover {
             border-color: var(--accent-primary);
             box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+        }
+
+        .star-badge {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            border-radius: 6px;
+            overflow: hidden;
+            line-height: 0;
+        }
+
+        .star-badge img {
+            height: 20px;
+            border-radius: 6px;
         }
 
         /* Layout */
@@ -854,7 +880,8 @@
             }
 
             .hero-stats {
-                flex-direction: column;
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
                 gap: 1rem;
             }
 
@@ -1441,7 +1468,7 @@
         </div>
         <div class="header-links">
             <div class="search-wrapper">
-                <input type="text" class="search-input" id="searchInput" placeholder="Search vulnerabilities..." autocomplete="off">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search vulnerabilities… (press /)" autocomplete="off">
                 <button class="search-clear" id="searchClear" aria-label="Clear search">×</button>
             </div>
             <a href="#quick-scan">Quick Scan</a>
@@ -1454,6 +1481,9 @@
                     <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
                 </svg>
                 GitHub
+            </a>
+            <a href="https://github.com/mariano-aguero/solidity-security-cheatsheet/stargazers" target="_blank" rel="noopener noreferrer" class="star-badge" title="Star on GitHub">
+                <img src="https://img.shields.io/github/stars/mariano-aguero/solidity-security-cheatsheet?style=flat&logo=github&labelColor=161b22&color=238636&label=stars" alt="GitHub stars" loading="lazy">
             </a>
         </div>
     </header>
@@ -1492,6 +1522,15 @@
                     <a href="#slippage"><span class="nav-icon">📉</span> Missing Slippage</a>
                     <a href="#fee-on-transfer"><span class="nav-icon">💸</span> Fee-on-Transfer</a>
                     <a href="#centralization"><span class="nav-icon">🏛️</span> Centralization Risk</a>
+                </nav>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">Advanced Topics</div>
+                <nav class="sidebar-nav">
+                    <a href="#nft-security"><span class="nav-icon">🖼️</span> NFT Security</a>
+                    <a href="#account-abstraction"><span class="nav-icon">🔑</span> Account Abstraction</a>
+                    <a href="#crosschain-security"><span class="nav-icon">🌉</span> Cross-chain & L2</a>
                 </nav>
             </div>
 
@@ -1770,8 +1809,62 @@
                         <li><strong>Single-function:</strong> Attacking the same function recursively</li>
                         <li><strong>Cross-function:</strong> Attacking different functions that share state</li>
                         <li><strong>Cross-contract:</strong> Exploiting reentrancy across multiple contracts</li>
-                        <li><strong>Read-only:</strong> Exploiting view functions during reentrancy state</li>
+                        <li><strong>Read-only:</strong> Exploiting view functions that return stale state during an active external call — no state is modified but stale data is consumed downstream</li>
                     </ul>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ READ-ONLY REENTRANCY (Curve/Vyper style)</span>
+                            <button class="copy-btn" onclick="copyCode(this)">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                                Copy
+                            </button>
+                        </div>
+                        <pre><code class="language-solidity">// Pool sends ETH back BEFORE burning LP tokens
+// → virtual_price() still reflects pre-burn inflated value
+contract VulnerablePool {
+    uint public totalSupply;
+
+    // view function returns STALE inflated value during reentrancy
+    function get_virtual_price() external view returns (uint) {
+        return address(this).balance * 1e18 / totalSupply;
+    }
+
+    function remove_liquidity(uint lpAmount) external {
+        uint ethOut = lpAmount * address(this).balance / totalSupply;
+
+        // ETH sent here — attacker's receive() fires
+        // At this point totalSupply NOT yet decreased!
+        (bool ok,) = msg.sender.call{value: ethOut}("");
+        require(ok);
+
+        totalSupply -= lpAmount; // Too late — attacker already read stale price
+    }
+}
+
+// Attacker exploits a lending protocol that uses VulnerablePool.get_virtual_price()
+contract ReadOnlyAttacker {
+    VulnerablePool pool;
+    ILendingProtocol lending; // uses pool.get_virtual_price() as collateral oracle
+
+    receive() external payable {
+        // During remove_liquidity, before totalSupply decreases:
+        // virtual_price() is inflated → collateral value is overstated
+        uint inflatedCollateral = lending.getCollateralValue(address(pool));
+        lending.borrow(inflatedCollateral); // Borrow more than collateral is worth!
+    }
+}
+
+// FIX: add reentrancy lock to view functions in DeFi pools
+uint private _locked = 1;
+modifier nonReentrantView() {
+    require(_locked == 1, "Reentrant call");
+    _;
+}</code></pre>
+                    </div>
 
                     <div class="code-block">
                         <div class="code-header">
@@ -2055,6 +2148,32 @@ contract VulnerableImplementation {
 
                     <div class="code-block">
                         <div class="code-header">
+                            <span class="code-label secure">✅ SECURE - Ownable2Step (Recommended)</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">// ❌ Ownable: one-step transfer — typo = permanent ownership loss
+import "@openzeppelin/contracts/access/Ownable.sol";
+contract Risky is Ownable {
+    constructor() Ownable(msg.sender) {}
+    // transferOwnership(wrongAddress) → contract is orphaned forever
+}
+
+// ✅ Ownable2Step: new owner must call acceptOwnership()
+import "@openzeppelin/contracts/access/Ownable2Step.sol";
+
+contract SecureOwnable is Ownable2Step {
+    constructor() Ownable(msg.sender) {}
+
+    function sensitiveAction() external onlyOwner {
+        // Only owner can call
+    }
+}
+// Flow: owner calls transferOwnership(newOwner)
+//       newOwner calls acceptOwnership() — atomic, no typo risk</code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
                             <span class="code-label secure">✅ SECURE - Role-based Access</span>
                             <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                         </div>
@@ -2096,11 +2215,12 @@ contract SecureImplementation is Initializable {
                     <div class="prevention-list">
                         <h4>🛡️ Prevention</h4>
                         <ul>
-                            <li>Always use access control modifiers on sensitive functions</li>
-                            <li>Use OpenZeppelin's Ownable or AccessControl</li>
-                            <li>Protect initializers in upgradeable contracts</li>
+                            <li>Use <code>Ownable2Step</code> instead of <code>Ownable</code> — prevents accidental ownership loss via typo</li>
+                            <li>Use OpenZeppelin's <code>AccessControl</code> for fine-grained roles</li>
+                            <li>Protect initializers in upgradeable contracts with <code>initializer</code> modifier</li>
                             <li>Use <code>_disableInitializers()</code> in implementation constructors</li>
                             <li>Review function visibility carefully (public vs external vs internal)</li>
+                            <li>Never leave <code>DEFAULT_ADMIN_ROLE</code> without a secure multi-sig</li>
                         </ul>
                     </div>
                 </article>
@@ -2513,29 +2633,66 @@ contract SecureVoting {
 
                     <div class="code-block">
                         <div class="code-header">
-                            <span class="code-label secure">✅ SECURE - Chainlink Oracle</span>
+                            <span class="code-label secure">✅ SECURE - Chainlink with Full Validation</span>
                             <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                         </div>
                         <pre><code class="language-solidity">import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 contract SecureLending {
     AggregatorV3Interface internal priceFeed;
+    // Set per-feed: ETH/USD heartbeat = 1h, some feeds = 24h
     uint256 public constant STALENESS = 1 hours;
 
-    function getLatestPrice() public view returns (int) {
+    function getLatestPrice() public view returns (int256 price) {
         (
             uint80 roundId,
-            int price,
-            uint startedAt,
-            uint updatedAt,
+            int256 answer,
+            ,
+            uint256 updatedAt,
             uint80 answeredInRound
         ) = priceFeed.latestRoundData();
 
-        // Validate the data
-        require(price > 0, "Invalid price");
-        require(updatedAt > 0, "Round not complete");
-        require(block.timestamp - updatedAt < STALENESS, "Stale");
-        require(answeredInRound >= roundId, "Stale round");
+        require(answer > 0, "Oracle: non-positive price");
+        require(updatedAt != 0, "Oracle: round not complete");
+        require(block.timestamp - updatedAt <= STALENESS, "Oracle: stale price");
+        require(answeredInRound >= roundId, "Oracle: stale round");
+
+        return answer;
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ L2 Sequencer Uptime Check (Arbitrum/Optimism)</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">// On L2s, the sequencer can go offline while Chainlink prices
+// keep updating. Always verify sequencer is live before using prices.
+contract L2SecureLending {
+    AggregatorV3Interface internal priceFeed;
+    // Chainlink Sequencer Uptime Feed address (per network)
+    // Arbitrum One:  0xFdB631F5EE196F0ed6FAa767959853A9F217697D
+    // Optimism:      0x371EAD81c9102C9BF4874A9075FFFf170F2Ee389
+    AggregatorV3Interface internal sequencerFeed;
+
+    uint256 public constant GRACE_PERIOD = 1 hours;
+    uint256 public constant STALENESS    = 1 hours;
+
+    function _checkSequencer() internal view {
+        (, int256 answer, uint256 startedAt,,) = sequencerFeed.latestRoundData();
+        // answer == 0: sequencer is UP; answer == 1: sequencer is DOWN
+        require(answer == 0, "Oracle: L2 sequencer down");
+        // Reject prices from right after sequencer restart
+        require(block.timestamp - startedAt > GRACE_PERIOD, "Oracle: grace period active");
+    }
+
+    function getLatestPrice() external view returns (int256) {
+        _checkSequencer();
+
+        (, int256 price,, uint256 updatedAt,) = priceFeed.latestRoundData();
+        require(price > 0, "Oracle: non-positive price");
+        require(block.timestamp - updatedAt <= STALENESS, "Oracle: stale price");
 
         return price;
     }
@@ -2546,9 +2703,10 @@ contract SecureLending {
                         <h4>🛡️ Prevention</h4>
                         <ul>
                             <li>Never use spot prices for critical operations</li>
-                            <li>Implement TWAP (Time-Weighted Average Price)</li>
-                            <li>Use established oracles (Chainlink, Band Protocol)</li>
-                            <li>Validate oracle data freshness and bounds</li>
+                            <li>Validate: <code>price &gt; 0</code>, <code>updatedAt != 0</code>, staleness, <code>answeredInRound &gt;= roundId</code></li>
+                            <li>On L2 (Arbitrum/Optimism): always check the Chainlink Sequencer Uptime Feed</li>
+                            <li>Enforce a grace period after sequencer restarts (min 1 hour)</li>
+                            <li>Set STALENESS per-feed — heartbeats vary (1h for ETH/USD, up to 24h for others)</li>
                             <li>Implement circuit breakers for extreme price movements</li>
                         </ul>
                     </div>
@@ -2637,14 +2795,105 @@ contract SecureLending {
 }</code></pre>
                     </div>
 
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE - OZ EIP-712 + Permit Frontrun Defense</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/Nonces.sol";
+
+// OZ v5: EIP712 base contract handles domain separator (including chainId)
+contract SecurePermitToken is EIP712, Nonces {
+    using ECDSA for bytes32;
+
+    bytes32 private constant PERMIT_TYPEHASH = keccak256(
+        "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
+    );
+
+    constructor() EIP712("MyToken", "1") {}
+
+    function permit(
+        address owner, address spender, uint256 value,
+        uint256 deadline, uint8 v, bytes32 r, bytes32 s
+    ) external {
+        require(block.timestamp <= deadline, "EIP2612: expired");
+
+        bytes32 structHash = keccak256(abi.encode(
+            PERMIT_TYPEHASH, owner, spender, value,
+            _useNonce(owner),  // auto-increments, prevents replay
+            deadline
+        ));
+
+        // _hashTypedDataV4 prepends "\x19\x01" + domain separator
+        address signer = _hashTypedDataV4(structHash).recover(v, r, s);
+        require(signer == owner, "EIP2612: invalid signature");
+
+        // set allowance...
+    }
+}
+
+// ⚠️ PERMIT FRONTRUNNING — using permit() in integrations
+// If you wrap permit() + action() in one call, the permit can be
+// front-run (attacker calls permit first). Make your action()
+// tolerant of a pre-existing allowance:
+function depositWithPermit(
+    IERC20Permit token, uint amount, uint deadline,
+    uint8 v, bytes32 r, bytes32 s
+) external {
+    // try/catch — if permit was already front-run, allowance exists → ok
+    try token.permit(msg.sender, address(this), amount, deadline, v, r, s) {}
+    catch {}
+    // This line still works because allowance is already set
+    token.safeTransferFrom(msg.sender, address(this), amount);
+}</code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ COMMON EIP-712 MISTAKES</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">// ❌ 1. Missing chainId in domain separator → cross-chain replay
+DOMAIN_SEPARATOR = keccak256(abi.encode(
+    TYPE_HASH,
+    keccak256(bytes("Protocol")),
+    keccak256(bytes("1")),
+    // Missing: block.chainid
+    address(this)
+));
+
+// ❌ 2. Missing verifyingContract → cross-contract replay
+DOMAIN_SEPARATOR = keccak256(abi.encode(
+    TYPE_HASH,
+    keccak256(bytes("Protocol")),
+    keccak256(bytes("1")),
+    block.chainid
+    // Missing: address(this)
+));
+
+// ❌ 3. No nonce → same-chain replay (signature used N times)
+bytes32 hash = keccak256(abi.encode(
+    TYPEHASH, owner, spender, value, deadline
+    // Missing: nonces[owner]++
+));
+
+// ❌ 4. ecrecover returns address(0) on bad sig — not caught
+address signer = ecrecover(digest, v, r, s);
+require(signer == owner); // passes if owner == address(0)!
+// Fix: require(signer != address(0) && signer == owner)</code></pre>
+                    </div>
+
                     <div class="prevention-list">
                         <h4>🛡️ Prevention</h4>
                         <ul>
-                            <li>Include nonces in signed messages</li>
-                            <li>Include chain ID (EIP-712 domain separator)</li>
-                            <li>Include contract address in domain</li>
-                            <li>Add deadline/expiration to signatures</li>
-                            <li>Use OpenZeppelin's EIP-712 implementation</li>
+                            <li>Use OpenZeppelin's <code>EIP712</code> + <code>Nonces</code> base contracts — handles domain separator and nonce management</li>
+                            <li>Domain separator must include: <code>chainId</code>, <code>verifyingContract</code>, name, version</li>
+                            <li>Always increment nonce <em>before</em> verifying — use <code>_useNonce()</code></li>
+                            <li>Check <code>signer != address(0)</code> after <code>ecrecover</code></li>
+                            <li>For permit integrations: wrap <code>permit()</code> in <code>try/catch</code> to handle frontrun gracefully</li>
+                            <li>Add deadline to every signed message</li>
                         </ul>
                     </div>
                 </article>
@@ -3481,6 +3730,381 @@ contract SecureProtocol is Ownable2Step {
 
             </section>
 
+            <!-- ERC-721 / NFT Security -->
+            <section id="nft-security">
+                <div class="section-header">
+                    <h2><span class="icon">🖼️</span> NFT Security (ERC-721)</h2>
+                    <p>Common attack vectors in NFT contracts — minting, reveal, and royalty mechanisms.</p>
+                </div>
+
+                <article class="vuln-card" id="safemint-reentrancy" data-severity="Critical">
+                    <div class="vuln-header">
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">_safeMint Reentrancy</h3>
+                            <p class="vuln-subtitle">onERC721Received callback enables reentrant minting</p>
+                        </div>
+                        <span class="severity-badge severity-critical">Critical</span>
+                    </div>
+                    <p><code>ERC721._safeMint</code> invokes <code>onERC721Received()</code> on the recipient if it's a contract. This creates a reentrancy vector: the recipient can call back into the mint function before the token counter is updated, minting more tokens than allowed (bypassing supply caps, whitelist limits, etc.).</p>
+                    <div class="impact-box">
+                        <strong>Real-world Impact:</strong> Multiple NFT launches have had supply-cap bypasses — attackers minted the entire collection in one transaction.
+                    </div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ VULNERABLE — counter updated after _safeMint</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">contract VulnerableNFT is ERC721 {
+    uint public totalMinted;
+    uint public constant MAX_SUPPLY = 1000;
+    uint public constant MAX_PER_WALLET = 5;
+
+    mapping(address => uint) public minted;
+
+    function mint(uint quantity) external payable {
+        require(totalMinted + quantity <= MAX_SUPPLY, "Sold out");
+        require(minted[msg.sender] + quantity <= MAX_PER_WALLET, "Limit");
+
+        for (uint i = 0; i < quantity; i++) {
+            // _safeMint calls onERC721Received — attacker re-enters here
+            // minted[msg.sender] hasn't been updated yet for this batch!
+            _safeMint(msg.sender, totalMinted + i);
+        }
+        // State updated AFTER all mints — too late
+        minted[msg.sender] += quantity;
+        totalMinted += quantity;
+    }
+}</code></pre>
+                    </div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE — CEI: update state before _safeMint</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
+contract SecureNFT is ERC721, ReentrancyGuard {
+    uint public totalMinted;
+    uint public constant MAX_SUPPLY = 1000;
+    uint public constant MAX_PER_WALLET = 5;
+
+    mapping(address => uint) public minted;
+
+    function mint(uint quantity) external payable nonReentrant {
+        require(totalMinted + quantity <= MAX_SUPPLY, "Sold out");
+        require(minted[msg.sender] + quantity <= MAX_PER_WALLET, "Limit");
+
+        // EFFECTS first
+        uint startId = totalMinted;
+        totalMinted += quantity;
+        minted[msg.sender] += quantity;
+
+        // INTERACTIONS last
+        for (uint i = 0; i < quantity; i++) {
+            _safeMint(msg.sender, startId + i);
+        }
+    }
+}</code></pre>
+                    </div>
+                    <div class="prevention-list">
+                        <h4>🛡️ Prevention</h4>
+                        <ul>
+                            <li>Always update counters/state BEFORE calling <code>_safeMint</code> (CEI pattern)</li>
+                            <li>Use <code>nonReentrant</code> on mint functions</li>
+                            <li>Use <code>_mint</code> instead of <code>_safeMint</code> if recipient is always an EOA</li>
+                            <li>Snapshot the token start ID before loops; don't rely on state that changes mid-loop</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <article class="vuln-card" id="nft-reveal" data-severity="High">
+                    <div class="vuln-header">
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">Reveal Manipulation & Royalty Bypass</h3>
+                            <p class="vuln-subtitle">Predictable reveal seeds and royalty circumvention</p>
+                        </div>
+                        <span class="severity-badge severity-high">High</span>
+                    </div>
+                    <p>Using <code>block.timestamp</code> or <code>blockhash</code> as randomness for NFT reveals allows miners/validators to predict or manipulate trait assignments. Royalty bypass via custom marketplaces is an economic attack, not a contract bug, but affects protocol revenue.</p>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ VULNERABLE — predictable reveal seed</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">contract VulnerableReveal {
+    uint public revealSeed;
+
+    function reveal() external onlyOwner {
+        // Predictable: validators can choose to include/exclude block
+        revealSeed = uint(keccak256(abi.encode(block.timestamp, blockhash(block.number - 1))));
+    }
+
+    function tokenURI(uint tokenId) public view override returns (string memory) {
+        // Trait determined by predictable seed + tokenId
+        uint trait = (revealSeed + tokenId) % 10;
+        return string(abi.encodePacked(baseURI, trait.toString(), ".json"));
+    }
+}</code></pre>
+                    </div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE — Chainlink VRF reveal + EIP-2981 royalties</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">import "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBaseV2Plus.sol";
+import "@openzeppelin/contracts/token/common/ERC2981.sol";
+
+contract SecureNFT is ERC721, ERC2981, VRFConsumerBaseV2Plus {
+    uint public revealSeed;
+    bool public revealed;
+
+    constructor() {
+        // Set royalty: 5% to creator on every secondary sale
+        // Marketplaces that honor EIP-2981 will enforce this
+        _setDefaultRoyalty(msg.sender, 500); // 500 = 5%
+    }
+
+    // Request random seed from Chainlink VRF
+    function requestReveal() external onlyOwner {
+        require(!revealed);
+        // requestId = vrfCoordinator.requestRandomWords(...)
+    }
+
+    // VRF callback — tamper-proof random seed
+    function fulfillRandomWords(uint, uint[] calldata randomWords) internal override {
+        revealSeed = randomWords[0];
+        revealed = true;
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC2981)
+        returns (bool) {
+        return super.supportsInterface(interfaceId);
+    }
+}</code></pre>
+                    </div>
+                    <div class="prevention-list">
+                        <h4>🛡️ Prevention</h4>
+                        <ul>
+                            <li>Use Chainlink VRF for any on-chain randomness in reveals or trait assignment</li>
+                            <li>Never use <code>block.timestamp</code>, <code>blockhash</code>, or <code>msg.sender</code> as randomness</li>
+                            <li>Implement <code>ERC2981</code> for on-chain royalty enforcement — marketplaces that query it will respect it</li>
+                            <li>Commit-reveal scheme as a simpler alternative if VRF is overkill</li>
+                        </ul>
+                    </div>
+                </article>
+            </section>
+
+            <!-- Account Abstraction (ERC-4337) -->
+            <section id="account-abstraction">
+                <div class="section-header">
+                    <h2><span class="icon">🔑</span> Account Abstraction (ERC-4337)</h2>
+                    <p>Security risks in smart account wallets, UserOperation validation, and Paymasters.</p>
+                </div>
+
+                <article class="vuln-card" id="userop-validation" data-severity="Critical">
+                    <div class="vuln-header">
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">UserOperation Validation Flaws</h3>
+                            <p class="vuln-subtitle">Weak validateUserOp enables unauthorized ops and paymaster drain</p>
+                        </div>
+                        <span class="severity-badge severity-critical">Critical</span>
+                    </div>
+                    <p>ERC-4337 smart accounts must implement <code>validateUserOp</code> correctly. A weak implementation can allow arbitrary callers to execute any operation on behalf of the account. Paymasters that don't validate the UserOp properly can be drained to pay for malicious transactions.</p>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ VULNERABLE — weak validateUserOp</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">contract VulnerableAccount {
+    address public owner;
+
+    // ❌ Only checks signature length, not actual signature validity
+    function validateUserOp(
+        PackedUserOperation calldata userOp,
+        bytes32 userOpHash,
+        uint256 missingAccountFunds
+    ) external returns (uint256 validationData) {
+        // BUG: accepts any non-empty signature!
+        if (userOp.signature.length > 0) {
+            return 0; // SIG_VALIDATION_SUCCESS
+        }
+        return 1; // SIG_VALIDATION_FAILED
+
+        // Also missing: _payPrefund(missingAccountFunds)
+    }
+}
+
+// ❌ VULNERABLE PAYMASTER — no userOp validation
+contract VulnerablePaymaster is BasePaymaster {
+    // Pays for ALL UserOps — anyone can drain it
+    function _validatePaymasterUserOp(
+        PackedUserOperation calldata,
+        bytes32,
+        uint256
+    ) internal pure override returns (bytes memory, uint256) {
+        return ("", 0); // Unconditionally sponsors everything
+    }
+}</code></pre>
+                    </div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE — EIP-1271 signature + paymaster whitelist</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">import "@account-abstraction/contracts/core/BaseAccount.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+
+contract SecureAccount is BaseAccount {
+    using ECDSA for bytes32;
+
+    address public owner;
+    IEntryPoint private immutable _entryPoint;
+
+    function validateUserOp(
+        PackedUserOperation calldata userOp,
+        bytes32 userOpHash,
+        uint256 missingAccountFunds
+    ) external override returns (uint256 validationData) {
+        // Only EntryPoint can call this
+        require(msg.sender == address(_entryPoint), "Not EntryPoint");
+
+        // Recover signer from EIP-191 prefixed hash
+        address signer = MessageHashUtils.toEthSignedMessageHash(userOpHash).recover(userOp.signature);
+        uint256 sigFailed = (signer != owner) ? 1 : 0;
+
+        // Pay EntryPoint prefund
+        _payPrefund(missingAccountFunds);
+
+        // Pack validAfter=0, validUntil=0 (no time bounds) with sigFailed
+        return _packValidationData(sigFailed == 1, 0, 0);
+    }
+}
+
+// Paymaster: only sponsor whitelisted selectors from whitelisted contracts
+contract AllowlistPaymaster is BasePaymaster {
+    mapping(address => mapping(bytes4 => bool)) public allowed;
+
+    function _validatePaymasterUserOp(
+        PackedUserOperation calldata userOp,
+        bytes32,
+        uint256
+    ) internal view override returns (bytes memory, uint256) {
+        address target = address(bytes20(userOp.callData[16:36]));
+        bytes4 selector = bytes4(userOp.callData[132:136]);
+        require(allowed[target][selector], "Paymaster: not allowed");
+        return ("", 0);
+    }
+}</code></pre>
+                    </div>
+                    <div class="prevention-list">
+                        <h4>🛡️ Prevention</h4>
+                        <ul>
+                            <li>Only accept calls to <code>validateUserOp</code> from the trusted EntryPoint</li>
+                            <li>Always verify the actual ECDSA/EIP-1271 signature — not just its presence</li>
+                            <li>Always call <code>_payPrefund(missingAccountFunds)</code> in <code>validateUserOp</code></li>
+                            <li>Paymasters must restrict which contracts/selectors they sponsor</li>
+                            <li>Use stake + deposit mechanism in EntryPoint to rate-limit Paymaster drain attempts</li>
+                            <li>Audit using <a href="https://eips.ethereum.org/EIPS/eip-4337" target="_blank" rel="noopener noreferrer">ERC-4337 spec</a> validation rules (simulation restrictions)</li>
+                        </ul>
+                    </div>
+                </article>
+            </section>
+
+            <!-- Cross-chain / L2 Security -->
+            <section id="crosschain-security">
+                <div class="section-header">
+                    <h2><span class="icon">🌉</span> Cross-chain & L2 Security</h2>
+                    <p>Risks unique to bridges, cross-chain messaging, and Layer 2 deployments.</p>
+                </div>
+
+                <article class="vuln-card" id="bridge-security" data-severity="Critical">
+                    <div class="vuln-header">
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">Bridge & Message Replay Attacks</h3>
+                            <p class="vuln-subtitle">Cross-chain messages replayed or misdirected</p>
+                        </div>
+                        <span class="severity-badge severity-critical">Critical</span>
+                    </div>
+                    <p>Cross-chain messages that lack proper validation (chain ID, nonce, sender whitelist) can be replayed on multiple chains or processed multiple times on the same chain. Bridges are the highest-value attack targets in DeFi — $2B+ stolen in bridge exploits.</p>
+                    <div class="impact-box">
+                        <strong>Real-world Impact:</strong> Ronin Bridge ($625M), Wormhole ($320M), Nomad ($190M) — all bridge exploits.
+                    </div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ VULNERABLE — no replay protection</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">contract VulnerableBridge {
+    // ❌ No chain ID check — same message valid on all chains
+    // ❌ No nonce — message can be replayed N times
+    // ❌ No sender whitelist — any address can call
+    function processMessage(
+        address recipient,
+        uint256 amount,
+        bytes calldata payload
+    ) external {
+        // Mint or release tokens without verifying source chain or uniqueness
+        token.mint(recipient, amount);
+    }
+}</code></pre>
+                    </div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE — Chainlink CCIP receiver pattern</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
+import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
+
+contract SecureCCIPReceiver is CCIPReceiver {
+    // Whitelist of allowed source chains
+    mapping(uint64 => bool) public allowedSourceChains;
+    // Whitelist of allowed sender contracts per chain
+    mapping(uint64 => address) public allowedSenders;
+    // Prevent message replay
+    mapping(bytes32 => bool) public processedMessages;
+
+    constructor(address router) CCIPReceiver(router) {}
+
+    function _ccipReceive(Client.Any2EVMMessage memory message) internal override {
+        // CCIP router already validates the message came from the network
+        // We add application-level checks:
+        require(allowedSourceChains[message.sourceChainSelector], "Chain not allowed");
+
+        address sender = abi.decode(message.sender, (address));
+        require(sender == allowedSenders[message.sourceChainSelector], "Sender not allowed");
+
+        // Prevent replay
+        require(!processedMessages[message.messageId], "Already processed");
+        processedMessages[message.messageId] = true;
+
+        // Process message...
+        (address recipient, uint256 amount) = abi.decode(message.data, (address, uint256));
+        token.mint(recipient, amount);
+    }
+}
+
+// ── L2 Sequencer-dependent contracts ─────────────────────────
+// If sequencer is down, users can't submit txs but ETH price keeps
+// moving. Liquidations/borrows during recovery can be unfair.
+// Always check sequencer uptime (see Oracle card above) before
+// executing any price-sensitive operation on Arbitrum/Optimism.</code></pre>
+                    </div>
+                    <div class="prevention-list">
+                        <h4>🛡️ Prevention</h4>
+                        <ul>
+                            <li>Always validate <code>sourceChainSelector</code> and sender address in cross-chain receivers</li>
+                            <li>Store processed message IDs to prevent replay</li>
+                            <li>Prefer battle-tested messaging protocols (Chainlink CCIP, LayerZero) over custom bridges</li>
+                            <li>On L2: check Chainlink Sequencer Uptime Feed before price-sensitive operations</li>
+                            <li>Implement withdrawal delays on bridges to allow fraud-proof windows</li>
+                            <li>Rate-limit mint/release amounts per time window to bound exploit damage</li>
+                        </ul>
+                    </div>
+                </article>
+            </section>
+
             <!-- Security Patterns -->
             <section id="patterns">
                 <div class="section-header">
@@ -4048,42 +4672,42 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";</c
 
                 <h3>Documentation</h3>
                 <div class="resource-links">
-                    <a href="https://docs.soliditylang.org/" target="_blank" class="resource-link">
+                    <a href="https://docs.soliditylang.org/" target="_blank" rel="noopener noreferrer" class="resource-link">
                         📖 Solidity Docs
                     </a>
-                    <a href="https://docs.openzeppelin.com/contracts/" target="_blank" class="resource-link">
+                    <a href="https://docs.openzeppelin.com/contracts/" target="_blank" rel="noopener noreferrer" class="resource-link">
                         🛡️ OpenZeppelin
                     </a>
-                    <a href="https://docs.chain.link/" target="_blank" class="resource-link">
+                    <a href="https://docs.chain.link/" target="_blank" rel="noopener noreferrer" class="resource-link">
                         🔗 Chainlink Docs
                     </a>
                 </div>
 
                 <h3>Security</h3>
                 <div class="resource-links">
-                    <a href="https://swcregistry.io/" target="_blank" class="resource-link">
+                    <a href="https://swcregistry.io/" target="_blank" rel="noopener noreferrer" class="resource-link">
                         ⚠️ SWC Registry
                     </a>
-                    <a href="https://consensys.github.io/smart-contract-best-practices/" target="_blank" class="resource-link">
+                    <a href="https://consensys.github.io/smart-contract-best-practices/" target="_blank" rel="noopener noreferrer" class="resource-link">
                         📋 Consensys Best Practices
                     </a>
-                    <a href="https://github.com/crytic/building-secure-contracts" target="_blank" class="resource-link">
+                    <a href="https://github.com/crytic/building-secure-contracts" target="_blank" rel="noopener noreferrer" class="resource-link">
                         🏗️ Trail of Bits
                     </a>
-                    <a href="https://immunefi.com/" target="_blank" class="resource-link">
+                    <a href="https://immunefi.com/" target="_blank" rel="noopener noreferrer" class="resource-link">
                         🐛 Immunefi
                     </a>
                 </div>
 
                 <h3>Learning</h3>
                 <div class="resource-links">
-                    <a href="https://www.damnvulnerabledefi.xyz/" target="_blank" class="resource-link">
+                    <a href="https://www.damnvulnerabledefi.xyz/" target="_blank" rel="noopener noreferrer" class="resource-link">
                         🎮 Damn Vulnerable DeFi
                     </a>
-                    <a href="https://ethernaut.openzeppelin.com/" target="_blank" class="resource-link">
+                    <a href="https://ethernaut.openzeppelin.com/" target="_blank" rel="noopener noreferrer" class="resource-link">
                         🎯 Ethernaut
                     </a>
-                    <a href="https://rekt.news/" target="_blank" class="resource-link">
+                    <a href="https://rekt.news/" target="_blank" rel="noopener noreferrer" class="resource-link">
                         📰 Rekt News
                     </a>
                 </div>
@@ -4094,7 +4718,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";</c
     <footer>
         <p>Made with 🔐 for the Ethereum community</p>
         <p style="margin-top: 0.5rem;">
-            <a href="https://github.com" target="_blank">GitHub</a> ·
+            <a href="https://github.com" target="_blank" rel="noopener noreferrer">GitHub</a> ·
             Last updated March 2026
         </p>
     </footer>
@@ -4177,6 +4801,16 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";</c
             });
         }, { passive: true });
 
+        // ── Sidebar Scroll Preservation ──────────────────────────────────────
+        const SIDEBAR_SCROLL_KEY = 'sidebar_scroll';
+        const savedSidebarScroll = sessionStorage.getItem(SIDEBAR_SCROLL_KEY);
+        if (savedSidebarScroll) {
+            sidebar.scrollTop = parseInt(savedSidebarScroll, 10);
+        }
+        sidebar.addEventListener('scroll', () => {
+            sessionStorage.setItem(SIDEBAR_SCROLL_KEY, sidebar.scrollTop);
+        }, { passive: true });
+
         // ── Severity Filter Tabs ─────────────────────────────────────────────
         const vulnCards = Array.from(document.querySelectorAll('.vuln-card[data-severity]'));
 
@@ -4238,6 +4872,12 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";</c
                 activeSearch = '';
                 searchClear.classList.remove('visible');
                 applyFilters();
+            }
+            // '/' to focus search (skip if already in an input)
+            if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                searchInput.focus();
+                searchInput.select();
             }
         });
 

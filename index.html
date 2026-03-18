@@ -11,6 +11,13 @@
     <!-- Canonical -->
     <link rel="canonical" href="https://mariano-aguero.github.io/solidity-security-cheatsheet/">
 
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#00ff88">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SoliditySec">
+
     <!-- Open Graph -->
     <meta property="og:title" content="Solidity Security Cheatsheet">
     <meta property="og:description" content="Comprehensive security guide for Solidity and Ethereum smart contracts — 20+ vulnerabilities, DeFi checklists, real exploits, and 12+ tools.">
@@ -1098,6 +1105,53 @@
         .vuln-card.hidden { display: none; }
         .filter-count { opacity: 0.7; font-weight: 400; }
 
+        .type-filters { margin-top: 0.5rem; }
+        .type-tab {
+            padding: 5px 12px;
+            font-size: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .type-tab:hover { border-color: var(--accent-secondary); color: var(--accent-secondary); }
+        .type-tab.active {
+            background: var(--accent-secondary);
+            border-color: var(--accent-secondary);
+            color: var(--bg-primary);
+            font-weight: 600;
+        }
+
+        /* Reading time badge */
+        .read-time {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            background: var(--bg-tertiary);
+            padding: 2px 8px;
+            border-radius: 10px;
+            white-space: nowrap;
+            margin-left: auto;
+        }
+
+        /* Share button */
+        .share-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            padding: 4px 6px;
+            border-radius: 6px;
+            transition: color 0.2s, background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.75rem;
+        }
+        .share-btn:hover { color: var(--accent-secondary); background: var(--bg-tertiary); }
+        .share-btn.copied { color: var(--accent-primary); }
+
         /* === QUICK SCAN === */
         .quick-scan-grid {
             display: grid;
@@ -1530,7 +1584,11 @@
                 <nav class="sidebar-nav">
                     <a href="#nft-security"><span class="nav-icon">🖼️</span> NFT Security</a>
                     <a href="#account-abstraction"><span class="nav-icon">🔑</span> Account Abstraction</a>
+                    <a href="#eip7702"><span class="nav-icon">🔓</span> EIP-7702 (Pectra)</a>
                     <a href="#crosschain-security"><span class="nav-icon">🌉</span> Cross-chain & L2</a>
+                    <a href="#mev-frontrunning"><span class="nav-icon">⚡</span> MEV & Frontrunning</a>
+                    <a href="#precision-loss"><span class="nav-icon">🔢</span> Precision Errors</a>
+                    <a href="#governance-attacks"><span class="nav-icon">🗳️</span> Governance Attacks</a>
                 </nav>
             </div>
 
@@ -1780,6 +1838,14 @@
                     <button class="filter-tab" data-filter="Critical">Critical <span class="filter-count" id="count-critical"></span></button>
                     <button class="filter-tab" data-filter="High">High <span class="filter-count" id="count-high"></span></button>
                     <button class="filter-tab" data-filter="Medium">Medium <span class="filter-count" id="count-medium"></span></button>
+                </div>
+
+                <div class="severity-filters type-filters">
+                    <button class="type-tab active" data-type="All">All Types</button>
+                    <button class="type-tab" data-type="General">General</button>
+                    <button class="type-tab" data-type="DeFi">DeFi</button>
+                    <button class="type-tab" data-type="NFT">NFT</button>
+                    <button class="type-tab" data-type="Infrastructure">Infrastructure</button>
                 </div>
 
                 <div id="searchEmpty" class="search-empty">
@@ -4009,6 +4075,103 @@ contract AllowlistPaymaster is BasePaymaster {
                         </ul>
                     </div>
                 </article>
+
+                <article class="vuln-card" id="eip7702" data-severity="High">
+                    <div class="vuln-header">
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">EIP-7702 — Delegated EOA Code (Pectra)</h3>
+                            <p class="vuln-subtitle">EOA delegates execution to a contract — new attack surfaces</p>
+                        </div>
+                        <span class="severity-badge severity-high">High</span>
+                    </div>
+                    <p>EIP-7702 (Pectra upgrade) lets an EOA sign an <em>authorization</em> that sets its code to a contract's bytecode for the duration of a transaction. This enables smart account features without a factory, but introduces new risks: if the delegate is malicious or upgradeable by a third party, the EOA loses full control of its assets.</p>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ VULNERABLE — EIP-7702 attack vectors</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">// EIP-7702 authorization tuple signed by EOA:
+// { chain_id, address (delegate), nonce }
+
+// ❌ 1. Cross-chain replay: chain_id = 0 means valid on ALL chains
+// If the EOA authorizes with chainId=0, attacker can replay on any EVM
+
+// ❌ 2. Malicious delegate — EOA signs authorization for attacker contract
+// That contract drains the EOA's ETH/tokens when called
+contract MaliciousDelegate {
+    function initialize() external {
+        // Called in the same tx as the EIP-7702 authorization
+        // Has full access to EOA's balance and storage
+        payable(attacker).transfer(address(this).balance); // Drain
+    }
+}
+
+// ❌ 3. Upgradeable delegate — proxy + malicious upgrade
+// EOA authorizes a proxy contract. Proxy admin upgrades to malicious impl.
+// EOA's code is now malicious — any future tx can drain it.
+
+// ❌ 4. No authorization revocation — if EOA is compromised,
+// the signed authorization can be used in any future tx until nonce advances
+
+// ❌ 5. Contracts checking tx.origin after 7702 authorization
+// tx.origin is still the EOA, but address(this) in the delegate is also the EOA
+// Breaks assumptions about EOA vs contract distinction</code></pre>
+                    </div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE — safe EIP-7702 delegate design</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">// ✅ Always use specific chain_id (never 0) in authorizations
+// Prevents cross-chain replay of signed authorization tuples
+
+// ✅ Delegate must be immutable and minimal — no admin, no upgrade
+contract SafeEOADelegate {
+    // ✅ No owner, no upgrade mechanism, no admin key
+    // Logic is fixed at deployment — trust the bytecode
+
+    // ✅ Require the EOA itself to authorize every operation
+    modifier onlySelf() {
+        require(msg.sender == address(this), "Not self");
+        _;
+    }
+
+    // ✅ Validate calldata/signature in execute — don't blindly execute
+    function execute(
+        address target,
+        uint256 value,
+        bytes calldata data,
+        bytes calldata signature
+    ) external onlySelf {
+        // Verify signature over (target, value, data, nonce, chainId)
+        // before executing
+    }
+}
+
+// ✅ For contract devs: don't rely on (code.length == 0) to detect EOA
+// After EIP-7702, EOAs can have code. Use ecrecover / EIP-1271 instead.
+function isValidSigner(address signer, bytes32 hash, bytes calldata sig)
+    internal view returns (bool)
+{
+    // Works for both EOA (ecrecover) and contracts (EIP-1271)
+    if (signer.code.length == 0) {
+        return signer == ECDSA.recover(hash, sig);
+    }
+    return IERC1271(signer).isValidSignature(hash, sig) == 0x1626ba7e;
+}</code></pre>
+                    </div>
+                    <div class="prevention-list">
+                        <h4>🛡️ Prevention</h4>
+                        <ul>
+                            <li>Never authorize with <code>chain_id = 0</code> — always specify the target chain</li>
+                            <li>Only authorize delegates that are immutable and minimal (no upgrade mechanism)</li>
+                            <li>Do not authorize proxy contracts as delegates</li>
+                            <li>Contract devs: never use <code>code.length == 0</code> to distinguish EOA from contract (EIP-7702 breaks this)</li>
+                            <li>Do not rely on <code>tx.origin == msg.sender</code> for EOA detection post-7702</li>
+                            <li>Treat EIP-7702 authorizations like signing a blank check — verify delegate bytecode</li>
+                        </ul>
+                    </div>
+                </article>
             </section>
 
             <!-- Cross-chain / L2 Security -->
@@ -4100,6 +4263,280 @@ contract SecureCCIPReceiver is CCIPReceiver {
                             <li>On L2: check Chainlink Sequencer Uptime Feed before price-sensitive operations</li>
                             <li>Implement withdrawal delays on bridges to allow fraud-proof windows</li>
                             <li>Rate-limit mint/release amounts per time window to bound exploit damage</li>
+                        </ul>
+                    </div>
+                </article>
+            </section>
+
+            <!-- MEV & Frontrunning -->
+            <section id="mev-frontrunning">
+                <div class="section-header">
+                    <h2><span class="icon">⚡</span> MEV & Frontrunning</h2>
+                    <p>Miner/validator extractable value — sandwich attacks, transaction ordering exploitation, and mitigations.</p>
+                </div>
+
+                <article class="vuln-card" id="sandwich-attack" data-severity="High">
+                    <div class="vuln-header">
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">Sandwich Attacks & Slippage Exploitation</h3>
+                            <p class="vuln-subtitle">Front/back-running DEX swaps to extract value</p>
+                        </div>
+                        <span class="severity-badge severity-high">High</span>
+                    </div>
+                    <p>A sandwich attack wraps a victim's DEX swap between two attacker transactions: buy before (drives price up) and sell after (at the inflated price). The attacker profits; the victim receives fewer tokens than expected. Zero <code>amountOutMin</code> (0% slippage tolerance) makes any swap trivially sandwichable.</p>
+                    <div class="impact-box">
+                        <strong>Real-world Impact:</strong> MEV bots extract $1M–$5M/day from DEX users via sandwich attacks. Jared bot (Ethereum) earned >$40M in a single year.
+                    </div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ VULNERABLE — 0 slippage, no deadline</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">// ❌ amountOutMin = 0 → accept any output (100% slippage)
+// ❌ deadline = type(uint256).max → tx valid forever
+function swapTokens(address[] calldata path, uint amountIn) external {
+    uniswapRouter.swapExactTokensForTokens(
+        amountIn,
+        0,                      // No slippage protection
+        path,
+        msg.sender,
+        type(uint256).max       // No deadline
+    );
+}</code></pre>
+                    </div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE — slippage + deadline + commit-reveal for sensitive ops</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">// ✅ Caller computes expected output off-chain and passes minimum
+// ✅ Deadline prevents stale transactions executing at bad prices
+function swapTokens(
+    address[] calldata path,
+    uint amountIn,
+    uint amountOutMin,   // e.g. expectedOut * 99 / 100 (1% tolerance)
+    uint deadline        // e.g. block.timestamp + 20 minutes
+) external {
+    require(deadline >= block.timestamp, "Expired");
+    uniswapRouter.swapExactTokensForTokens(
+        amountIn,
+        amountOutMin,
+        path,
+        msg.sender,
+        deadline
+    );
+}
+
+// ── Commit-Reveal for sensitive auctions / governance ─────────
+// Phase 1: commit hash (bid hidden from MEV bots)
+mapping(address => bytes32) public commitments;
+function commit(bytes32 hash) external { commitments[msg.sender] = hash; }
+
+// Phase 2: reveal after commit window closes
+function reveal(uint bid, bytes32 salt) external {
+    require(commitments[msg.sender] == keccak256(abi.encodePacked(bid, salt, msg.sender)));
+    delete commitments[msg.sender];
+    // process bid...
+}</code></pre>
+                    </div>
+                    <div class="prevention-list">
+                        <h4>🛡️ Prevention</h4>
+                        <ul>
+                            <li>Always pass meaningful <code>amountOutMin</code> — compute off-chain from current price × (1 - slippage%)</li>
+                            <li>Always set a <code>deadline</code> (e.g. <code>block.timestamp + 20 minutes</code>)</li>
+                            <li>For auctions, governance, or large trades: use commit-reveal to hide intent</li>
+                            <li>Consider private mempool relays (Flashbots Protect, MEV Blocker) for high-value swaps</li>
+                            <li>Use time-weighted average prices (TWAP) instead of spot for collateral valuation</li>
+                        </ul>
+                    </div>
+                </article>
+            </section>
+
+            <!-- Precision / Rounding Loss -->
+            <section id="precision-loss">
+                <div class="section-header">
+                    <h2><span class="icon">🔢</span> Precision & Rounding Errors</h2>
+                    <p>Integer arithmetic truncation and division ordering bugs — the silent value drain in DeFi.</p>
+                </div>
+
+                <article class="vuln-card" id="division-precision" data-severity="High">
+                    <div class="vuln-header">
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">Division Before Multiplication</h3>
+                            <p class="vuln-subtitle">Integer truncation silently destroys precision</p>
+                        </div>
+                        <span class="severity-badge severity-high">High</span>
+                    </div>
+                    <p>Solidity integer division truncates toward zero. Dividing before multiplying amplifies truncation error — in DeFi at scale, this creates exploitable rounding that extracts value from the protocol or from users. Always multiply before you divide.</p>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ VULNERABLE — divide first, lose precision</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">// ❌ Division truncates THEN multiplies — massive precision loss
+function badFeeCalc(uint amount, uint feeBps) external pure returns (uint) {
+    return (amount / 10000) * feeBps;
+    // amount=999, feeBps=1 → (999/10000)=0 → 0*1 = 0  (fee lost!)
+    // amount=1000 → (1000/10000)=0 → still 0 (should be 0.1)
+}
+
+// ❌ Compound-style dust accumulation
+function distributeRewards(uint totalReward, uint totalShares) external {
+    uint rewardPerShare = totalReward / totalShares; // Truncates!
+    // If totalReward=1000, totalShares=3 → 333 per share
+    // 3 * 333 = 999, 1 wei stuck in contract forever per cycle
+}
+
+// ❌ Intermediate division in multi-step calc
+function convert(uint amount, uint rate, uint precision) external pure returns (uint) {
+    uint intermediate = amount / precision; // Truncation here
+    return intermediate * rate;             // Compounds the error
+}</code></pre>
+                    </div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE — multiply first, use scaled fixed-point</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">// ✅ Multiply BEFORE dividing — preserves maximum precision
+function goodFeeCalc(uint amount, uint feeBps) external pure returns (uint) {
+    return (amount * feeBps) / 10000;
+    // amount=999, feeBps=1 → (999*1)/10000 = 0 (truncation, but unavoidable)
+    // amount=10001, feeBps=1 → (10001)/10000 = 1  ✓
+}
+
+// ✅ Accumulate in fixed-point (1e18 scale), convert at withdrawal
+contract RewardDistributor {
+    uint public rewardPerShareAccumulated; // scaled by 1e18
+    mapping(address => uint) public rewardDebt;
+
+    function distributeRewards(uint totalReward, uint totalShares) external {
+        // Scale reward to preserve sub-wei precision across shares
+        rewardPerShareAccumulated += (totalReward * 1e18) / totalShares;
+    }
+
+    function harvest(address user, uint userShares) external returns (uint reward) {
+        uint entitled = (userShares * rewardPerShareAccumulated) / 1e18;
+        reward = entitled - rewardDebt[user];
+        rewardDebt[user] = entitled;
+        // transfer reward...
+    }
+}
+
+// ✅ Round in protocol's favor (not user's) to prevent free extraction
+function withdraw(uint shares, uint totalShares, uint totalAssets)
+    external pure returns (uint assets)
+{
+    // Round DOWN assets returned to user (ERC-4626 pattern)
+    return (shares * totalAssets) / totalShares;
+}
+
+function previewDeposit(uint assets, uint totalShares, uint totalAssets)
+    external pure returns (uint shares)
+{
+    // Round DOWN shares minted (protects existing shareholders)
+    if (totalAssets == 0) return assets;
+    return (assets * totalShares) / totalAssets;
+}</code></pre>
+                    </div>
+                    <div class="prevention-list">
+                        <h4>🛡️ Prevention</h4>
+                        <ul>
+                            <li><strong>Always multiply before you divide</strong> — never the reverse</li>
+                            <li>Use 1e18-scaled fixed-point for per-share reward accounting (Synthetix/Masterchef pattern)</li>
+                            <li>In ERC-4626 vaults: round <em>down</em> on deposit shares and withdraw assets (favors protocol)</li>
+                            <li>Test with small values (1 wei, 1 share) — rounding bugs often appear only at edge amounts</li>
+                            <li>Use <code>mulDiv(a, b, c)</code> (OZ <code>Math.mulDiv</code>) for overflow-safe multiply-then-divide</li>
+                        </ul>
+                    </div>
+                </article>
+            </section>
+
+            <!-- Governance Attacks -->
+            <section id="governance-attacks">
+                <div class="section-header">
+                    <h2><span class="icon">🗳️</span> Governance Attacks</h2>
+                    <p>Flash loan voting, timelock bypass, and proposal manipulation in on-chain governance.</p>
+                </div>
+
+                <article class="vuln-card" id="flash-loan-governance" data-severity="Critical">
+                    <div class="vuln-header">
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">Flash Loan Voting & Governance Manipulation</h3>
+                            <p class="vuln-subtitle">Temporary voting power used to pass malicious proposals</p>
+                        </div>
+                        <span class="severity-badge severity-critical">Critical</span>
+                    </div>
+                    <p>An attacker borrows a large amount of governance tokens via flash loan, votes on a proposal in the same transaction, then repays the loan. If voting weight is checked at the current block (spot balance), the attacker can pass any proposal with borrowed power — including proposals to drain the treasury.</p>
+                    <div class="impact-box">
+                        <strong>Real-world Impact:</strong> Beanstalk ($182M, 2022) — attacker used flash loan to acquire majority voting share, passed malicious governance proposal, drained treasury in one tx.
+                    </div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ VULNERABLE — spot balance voting</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">contract VulnerableGovernance {
+    IERC20 public token;
+
+    function castVote(uint proposalId, bool support) external {
+        // ❌ Uses current balance — flash loan inflates this to any amount
+        uint weight = token.balanceOf(msg.sender);
+        // Record vote with weight...
+    }
+}</code></pre>
+                    </div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE — snapshot votes + timelock + quorum</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">import "@openzeppelin/contracts/governance/Governor.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
+
+// OZ Governor: votes are SNAPSHOTTED at proposal creation block
+// → flash loans can't work (can't change past snapshots)
+contract SecureGovernance is
+    Governor,
+    GovernorVotes,           // ERC20Votes snapshot-based voting
+    GovernorTimelockControl, // Mandatory delay before execution
+    GovernorVotesQuorumFraction
+{
+    constructor(IVotes token, TimelockController timelock)
+        Governor("MyDAO")
+        GovernorVotes(token)
+        GovernorTimelockControl(timelock)
+        GovernorVotesQuorumFraction(10) // 10% quorum
+    {}
+
+    function votingDelay() public pure override returns (uint256) {
+        return 1 days / 12; // ~1 day in blocks
+    }
+
+    function votingPeriod() public pure override returns (uint256) {
+        return 5 days / 12; // ~5 day voting window
+    }
+}
+
+// ERC20Votes: token holders must delegate to themselves to vote
+// and voting weight uses getPastVotes(account, proposalSnapshot)
+// which reads historical state — immune to flash loans
+
+// Key timelock parameters:
+// minDelay = 2 days  → community can exit before malicious proposal executes
+// proposers = [governance contract]
+// executors = [address(0)] → anyone can execute after delay</code></pre>
+                    </div>
+                    <div class="prevention-list">
+                        <h4>🛡️ Prevention</h4>
+                        <ul>
+                            <li>Use snapshot-based voting (<code>ERC20Votes.getPastVotes</code>) — never spot balance</li>
+                            <li>Always include a <code>TimelockController</code> — minimum 2-day delay lets community react</li>
+                            <li>Require meaningful quorum (≥5-10% of supply)</li>
+                            <li>Add voting delay (≥1 day) between proposal creation and vote start — allows community awareness</li>
+                            <li>For treasuries: limit single-proposal drain amounts regardless of vote outcome</li>
                         </ul>
                     </div>
                 </article>
@@ -4272,42 +4709,111 @@ event ConfigUpdated(bytes32 indexed key, uint256 oldValue, uint256 newValue);</c
             <section id="gas">
                 <div class="section-header">
                     <h2><span class="icon">⛽</span> Gas Optimization</h2>
-                    <p>Techniques to reduce transaction costs.</p>
+                    <p>Techniques to reduce transaction costs without sacrificing security.</p>
                 </div>
 
                 <div class="code-block">
                     <div class="code-header">
-                        <span class="code-label">Gas Saving Techniques</span>
+                        <span class="code-label">Storage & Loop Patterns</span>
                         <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                     </div>
-                    <pre><code class="language-solidity">// Use calldata for read-only arrays
-function process(uint256[] calldata data) external { }
-
-// Cache storage in memory for loops
-function sum() external view returns (uint256 total) {
-    uint256 len = items.length; // Cache
-    for (uint256 i = 0; i < len;) {
-        total += items[i];
-        unchecked { ++i; } // Safe increment
+                    <pre><code class="language-solidity">// ✅ calldata for read-only params (cheaper than memory)
+function process(uint256[] calldata data) external pure returns (uint256 sum) {
+    uint256 len = data.length; // cache .length — SLOAD is 2100 gas first access
+    for (uint256 i; i < len;) {
+        sum += data[i];
+        unchecked { ++i; } // safe: can't overflow before gas limit
     }
 }
 
-// Storage packing (32 byte slots)
-// Bad: 3 slots
-uint256 a;  // Slot 0
-uint8 b;    // Slot 1
-uint256 c;  // Slot 2
+// ✅ Storage packing — pack < 32-byte types into same slot
+// ❌ Bad: 3 slots (uint8 doesn't share with adjacent uint256)
+struct BadConfig {
+    uint256 a;   // slot 0
+    uint8   b;   // slot 1
+    uint256 c;   // slot 2
+}
+// ✅ Good: 2 slots
+struct GoodConfig {
+    uint256 a;   // slot 0
+    uint256 c;   // slot 1
+    uint8   b;   // slot 1 (packed alongside c's remaining space — if c < 32 bytes)
+}
+// Tip: sort struct fields largest→smallest to maximize packing
 
-// Good: 2 slots
-uint256 a;  // Slot 0
-uint256 c;  // Slot 1
-uint8 b;    // Slot 1 (packed)
+// ✅ immutable — set once in constructor, stored in bytecode (no SLOAD)
+contract Token {
+    address public immutable owner;
+    uint256 public immutable maxSupply;
+    constructor(address _owner, uint256 _max) {
+        owner = _owner;
+        maxSupply = _max;
+    }
+}
 
-// Use bytes32 instead of string
-bytes32 public constant NAME = "MyContract";
+// ✅ Custom errors — cheaper than revert strings (saves ~500 gas)
+error Unauthorized(address caller);
+error InsufficientBalance(uint256 have, uint256 need);
+function withdraw(uint256 amount) external {
+    if (msg.sender != owner) revert Unauthorized(msg.sender);
+    if (balances[msg.sender] < amount) revert InsufficientBalance(balances[msg.sender], amount);
+}
 
-// Short-circuit: put cheaper checks first
-require(amount > 0 && balances[msg.sender] >= amount);</code></pre>
+// ✅ Short-circuit: cheapest checks first
+require(amount > 0);                    // Cheap: no SLOAD
+require(balances[msg.sender] >= amount); // Expensive: SLOAD</code></pre>
+                </div>
+
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-label">Transient Storage — EIP-1153 (Solidity ≥ 0.8.24)</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <pre><code class="language-solidity">// EIP-1153: tstore/tload — storage that resets to 0 after each transaction
+// Cost: 100 gas (vs 20,000 for cold SSTORE) — perfect for locks and accumulators
+
+// ✅ Cheaper reentrancy guard using transient storage
+// OZ v5.1+: ReentrancyGuardTransient
+import "@openzeppelin/contracts/utils/ReentrancyGuardTransient.sol";
+
+contract EfficientVault is ReentrancyGuardTransient {
+    function withdraw(uint256 amount) external nonReentrant {
+        // Lock costs 100 gas (tstore) instead of 20,000 (sstore)
+        // Automatically cleared at end of tx — no cleanup needed
+    }
+}
+
+// ✅ Manual transient lock (Solidity assembly)
+contract ManualTransientLock {
+    uint256 private constant LOCK_SLOT = uint256(keccak256("reentrancy.lock")) - 1;
+
+    modifier transientLock() {
+        assembly { if tload(LOCK_SLOT) { revert(0, 0) } }
+        assembly { tstore(LOCK_SLOT, 1) }
+        _;
+        assembly { tstore(LOCK_SLOT, 0) }
+    }
+}
+
+// ✅ Transient storage for intra-tx accumulators (flash loan fees, etc.)
+// Accumulate a value across multiple calls in one tx, read at end
+contract FlashLoanFeeAccumulator {
+    uint256 private constant FEE_SLOT = uint256(keccak256("flash.fee.accumulator")) - 1;
+
+    function _addFee(uint256 fee) internal {
+        assembly {
+            let current := tload(FEE_SLOT)
+            tstore(FEE_SLOT, add(current, fee))
+        }
+    }
+    function _getTotalFee() internal view returns (uint256 fee) {
+        assembly { fee := tload(FEE_SLOT) }
+    }
+}
+
+// ⚠️ Security note: transient storage persists within the SAME tx
+// A reentrancy attack WITHIN the same tx can still read/write tstore
+// → still need locks; transient just makes them cheaper, not unnecessary</code></pre>
                 </div>
             </section>
 
@@ -4623,7 +5129,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";</code></pre>
                 </div>
 
-                <h3>Modifier Reference</h3>
+                <h3>Modifier Reference (v5)</h3>
                 <div class="modifier-table">
                     <div class="modifier-row">
                         <span>Modifier</span>
@@ -4638,7 +5144,12 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";</c
                     <div class="modifier-row">
                         <span class="modifier-name">nonReentrant</span>
                         <span class="modifier-contract">ReentrancyGuard</span>
-                        <span>Prevent reentrancy</span>
+                        <span>Prevent reentrancy (SSTORE)</span>
+                    </div>
+                    <div class="modifier-row">
+                        <span class="modifier-name">nonReentrant</span>
+                        <span class="modifier-contract">ReentrancyGuardTransient</span>
+                        <span>Prevent reentrancy (TSTORE — cheaper, v5.1+)</span>
                     </div>
                     <div class="modifier-row">
                         <span class="modifier-name">whenNotPaused</span>
@@ -4658,8 +5169,54 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";</c
                     <div class="modifier-row">
                         <span class="modifier-name">initializer</span>
                         <span class="modifier-contract">Initializable</span>
-                        <span>Run once on init</span>
+                        <span>Run once on init (upgradeable)</span>
                     </div>
+                    <div class="modifier-row">
+                        <span class="modifier-name">reinitializer(n)</span>
+                        <span class="modifier-contract">Initializable</span>
+                        <span>Run once on upgrade n (upgradeable)</span>
+                    </div>
+                </div>
+
+                <div class="code-block" style="margin-top: 1.5rem;">
+                    <div class="code-header">
+                        <span class="code-label warning">⚠️ OZ v5 Breaking Changes from v4</span>
+                        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                    </div>
+                    <pre><code class="language-solidity">// ❌ v4 (implicit owner = msg.sender)
+contract Old is Ownable { constructor() {} }
+
+// ✅ v5 (explicit initial owner required)
+contract New is Ownable {
+    constructor() Ownable(msg.sender) {}
+}
+
+// ❌ v4 paths (no longer valid in v5)
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol"; // REMOVED
+import "@openzeppelin/contracts/security/Pausable.sol";        // REMOVED
+
+// ✅ v5 paths
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
+
+// New in v5: explicit _pause()/_unpause() — must expose via your own functions
+// (Pausable no longer inherits AccessControl; wire it yourself)
+contract MyPausable is Ownable, Pausable {
+    constructor() Ownable(msg.sender) {}
+    function pause()   external onlyOwner { _pause(); }
+    function unpause() external onlyOwner { _unpause(); }
+}
+
+// New in v5.1: ReentrancyGuardTransient (uses EIP-1153 tstore — 100 gas vs 20k)
+import "@openzeppelin/contracts/utils/ReentrancyGuardTransient.sol";
+// Drop-in replacement — same nonReentrant modifier, just cheaper
+
+// ERC20 v5: _update() replaces _beforeTokenTransfer/_afterTokenTransfer hooks
+// Override _update() for transfer hooks:
+function _update(address from, address to, uint256 amount) internal override {
+    super._update(from, to, amount);
+    // your hook logic here
+}</code></pre>
                 </div>
             </section>
 
@@ -4963,6 +5520,113 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";</c
                 defiState[id] = isChecked;
                 localStorage.setItem(DEFI_KEY, JSON.stringify(defiState));
             });
+        });
+
+        // ── Card Types ───────────────────────────────────────────────────────
+        const cardTypeMap = {
+            'reentrancy': 'General',       'overflow': 'General',
+            'access-control': 'Infrastructure', 'tx-origin': 'General',
+            'delegatecall': 'Infrastructure', 'frontrunning': 'DeFi',
+            'dos': 'General',              'oracle': 'DeFi',
+            'signature': 'General',        'external-calls': 'General',
+            'timestamp': 'General',        'randomness': 'General',
+            'force-feeding': 'General',    'storage-collision': 'Infrastructure',
+            'flash-loans': 'DeFi',         'vault-inflation': 'DeFi',
+            'proxy-vulns': 'Infrastructure','slippage': 'DeFi',
+            'fee-on-transfer': 'DeFi',     'centralization': 'Infrastructure',
+            'safemint-reentrancy': 'NFT',  'nft-reveal': 'NFT',
+            'userop-validation': 'Infrastructure', 'eip7702': 'Infrastructure',
+            'bridge-security': 'Infrastructure', 'sandwich-attack': 'DeFi',
+            'division-precision': 'DeFi',  'flash-loan-governance': 'DeFi',
+        };
+
+        vulnCards.forEach(card => {
+            card.dataset.type = cardTypeMap[card.id] || 'General';
+        });
+
+        // ── Type Filter Tabs ─────────────────────────────────────────────────
+        let activeType = 'All';
+
+        function applyFilters() {
+            let visible = 0;
+            vulnCards.forEach(card => {
+                const matchSev  = activeFilter === 'All' || card.dataset.severity === activeFilter;
+                const matchType = activeType === 'All'   || card.dataset.type === activeType;
+                const text      = (card.textContent || '').toLowerCase();
+                const matchSearch = !activeSearch || text.includes(activeSearch);
+                const show = matchSev && matchType && matchSearch;
+                card.classList.toggle('hidden', !show);
+                if (show) visible++;
+            });
+            document.getElementById('searchEmpty').classList.toggle(
+                'visible',
+                visible === 0 && (activeSearch || activeFilter !== 'All' || activeType !== 'All')
+            );
+        }
+
+        document.querySelectorAll('.type-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.type-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                activeType = tab.dataset.type;
+                applyFilters();
+            });
+        });
+        // Note: severity filter tabs and search already call applyFilters() by name —
+        // redefining applyFilters() above is sufficient; no re-wiring needed.
+
+        // ── Reading Time + Share Button (safe DOM methods) ────────────────────
+        function makeShareSVG() {
+            const ns = 'http://www.w3.org/2000/svg';
+            const svg = document.createElementNS(ns, 'svg');
+            svg.setAttribute('width', '13'); svg.setAttribute('height', '13');
+            svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('fill', 'none');
+            svg.setAttribute('stroke', 'currentColor'); svg.setAttribute('stroke-width', '2');
+            const path = document.createElementNS(ns, 'path');
+            path.setAttribute('d', 'M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8');
+            const poly = document.createElementNS(ns, 'polyline');
+            poly.setAttribute('points', '16 6 12 2 8 6');
+            const line = document.createElementNS(ns, 'line');
+            line.setAttribute('x1', '12'); line.setAttribute('y1', '2');
+            line.setAttribute('x2', '12'); line.setAttribute('y2', '15');
+            svg.appendChild(path); svg.appendChild(poly); svg.appendChild(line);
+            return svg;
+        }
+
+        const WORDS_PER_MIN = 200;
+
+        vulnCards.forEach(card => {
+            const header = card.querySelector('.vuln-header');
+            if (!header) return;
+
+            // Reading time badge
+            const words = card.textContent.trim().split(/\s+/).length;
+            const minutes = Math.max(1, Math.round(words / WORDS_PER_MIN));
+            const readBadge = document.createElement('span');
+            readBadge.className = 'read-time';
+            readBadge.textContent = minutes + ' min';
+            readBadge.title = '~' + words + ' words';
+            header.appendChild(readBadge);
+
+            // Share button
+            const shareBtn = document.createElement('button');
+            shareBtn.className = 'share-btn';
+            shareBtn.title = 'Copy link to this section';
+            shareBtn.appendChild(makeShareSVG());
+            shareBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const url = window.location.href.split('#')[0] + '#' + card.id;
+                navigator.clipboard.writeText(url).then(() => {
+                    shareBtn.classList.add('copied');
+                    shareBtn.textContent = '✓ Copied!';
+                    setTimeout(() => {
+                        shareBtn.classList.remove('copied');
+                        shareBtn.textContent = '';
+                        shareBtn.appendChild(makeShareSVG());
+                    }, 2000);
+                });
+            });
+            header.appendChild(shareBtn);
         });
 
         // ── Init ─────────────────────────────────────────────────────────────

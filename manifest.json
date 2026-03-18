@@ -1,0 +1,19 @@
+{
+  "name": "Solidity Security Cheatsheet",
+  "short_name": "SoliditySec",
+  "description": "Production-grade Solidity security reference — 20+ vulnerabilities, DeFi checklists, real exploits, and security tools.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0e17",
+  "theme_color": "#00ff88",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "preview.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["developer", "education", "security"]
+}

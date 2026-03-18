@@ -809,10 +809,6 @@
 
         /* Mobile responsive */
         @media (max-width: 1024px) {
-            .sidebar {
-                display: none;
-            }
-
             main {
                 margin-left: 0;
                 padding: 2rem;
@@ -833,6 +829,10 @@
 
             .stat-value {
                 font-size: 2rem;
+            }
+
+            .quick-scan-grid {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -898,6 +898,504 @@
             color: var(--text-primary);
         }
 
+        /* === LIGHT MODE === */
+        html.light-mode {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --bg-code: #1e293b;
+            --accent-primary: #059669;
+            --accent-secondary: #0284c7;
+            --accent-warning: #d97706;
+            --accent-danger: #dc2626;
+            --accent-purple: #7c3aed;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --border-color: #e2e8f0;
+            --border-glow: rgba(5, 150, 105, 0.25);
+            --gradient-main: linear-gradient(135deg, #059669 0%, #0284c7 100%);
+            --shadow-glow: 0 0 40px rgba(5, 150, 105, 0.1);
+        }
+
+        html.light-mode body::before {
+            background-image:
+                linear-gradient(rgba(5, 150, 105, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(5, 150, 105, 0.04) 1px, transparent 1px);
+        }
+
+        /* === THEME TOGGLE === */
+        .theme-toggle {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 7px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            line-height: 1;
+            transition: all 0.2s;
+        }
+
+        .theme-toggle:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        /* === MOBILE HAMBURGER === */
+        .hamburger-btn {
+            display: none;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-direction: column;
+            gap: 5px;
+            width: 38px;
+            height: 38px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hamburger-btn:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        .hamburger-btn span {
+            display: block;
+            width: 18px;
+            height: 2px;
+            background: currentColor;
+            border-radius: 2px;
+            transition: all 0.2s;
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 998;
+            backdrop-filter: blur(4px);
+        }
+
+        .sidebar-overlay.active { display: block; }
+
+        /* === SEARCH BAR === */
+        .search-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 8px 32px 8px 14px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            width: 200px;
+            font-family: inherit;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px var(--border-glow);
+            width: 260px;
+        }
+
+        .search-input::placeholder { color: var(--text-muted); }
+
+        .search-clear {
+            position: absolute;
+            right: 10px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1rem;
+            line-height: 1;
+            padding: 0;
+            display: none;
+        }
+
+        .search-clear.visible { display: block; }
+
+        .search-empty {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-muted);
+            display: none;
+        }
+
+        .search-empty.visible { display: block; }
+        .search-empty p { font-size: 1.1rem; }
+        .search-empty span { font-size: 2rem; display: block; margin-bottom: 1rem; }
+
+        /* === SEVERITY FILTER TABS === */
+        .severity-filters {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-tab {
+            padding: 6px 16px;
+            border-radius: 50px;
+            border: 1px solid var(--border-color);
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            font-weight: 500;
+        }
+
+        .filter-tab:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
+        .filter-tab.active { font-weight: 600; color: var(--bg-primary) !important; }
+        .filter-tab[data-filter="All"].active { background: var(--accent-primary); border-color: var(--accent-primary); }
+        .filter-tab[data-filter="Critical"].active { background: var(--accent-danger); border-color: var(--accent-danger); }
+        .filter-tab[data-filter="High"].active { background: var(--accent-warning); border-color: var(--accent-warning); }
+        .filter-tab[data-filter="Medium"].active { background: var(--accent-purple); border-color: var(--accent-purple); }
+
+        .vuln-card.hidden { display: none; }
+        .filter-count { opacity: 0.7; font-weight: 400; }
+
+        /* === QUICK SCAN === */
+        .quick-scan-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .red-flag-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            transition: border-color 0.2s;
+        }
+
+        .red-flag-row:hover { border-color: rgba(255, 56, 96, 0.4); }
+
+        .red-flag-code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--accent-danger);
+            background: rgba(255, 56, 96, 0.1);
+            padding: 3px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            min-width: 160px;
+        }
+
+        .red-flag-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .red-flag-desc a {
+            color: var(--accent-secondary);
+            text-decoration: none;
+            font-size: 0.78rem;
+            display: block;
+            margin-top: 2px;
+        }
+
+        /* === INTERACTIVE CHECKLIST === */
+        .checklist-item {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .checklist-item:hover .checkbox { border-color: var(--accent-primary); }
+
+        .checkbox.checked {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+            position: relative;
+        }
+
+        .checkbox.checked::after {
+            content: '';
+            position: absolute;
+            left: 4px;
+            top: 1px;
+            width: 6px;
+            height: 10px;
+            border: 2px solid var(--bg-primary);
+            border-top: none;
+            border-left: none;
+            transform: rotate(45deg);
+        }
+
+        .checklist-item.done span { color: var(--text-muted); text-decoration: line-through; }
+
+        .checklist-progress {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding: 1rem 1.25rem;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .progress-bar-wrapper {
+            flex: 1;
+            height: 6px;
+            background: var(--border-color);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--gradient-main);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .progress-text {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .checklist-reset {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .checklist-reset:hover { border-color: var(--accent-danger); color: var(--accent-danger); }
+
+        /* === REAL EXPLOITS TABLE === */
+        .exploit-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        .exploit-amount-critical {
+            color: var(--accent-danger);
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            white-space: nowrap;
+        }
+
+        .exploit-amount-high {
+            color: var(--accent-warning);
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            white-space: nowrap;
+        }
+
+        .exploit-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .exploit-tag-reentrancy { background: rgba(255, 56, 96, 0.15); color: var(--accent-danger); }
+        .exploit-tag-access { background: rgba(168, 85, 247, 0.15); color: var(--accent-purple); }
+        .exploit-tag-oracle { background: rgba(255, 107, 53, 0.15); color: var(--accent-warning); }
+        .exploit-tag-logic { background: rgba(0, 212, 255, 0.15); color: var(--accent-secondary); }
+        .exploit-tag-proxy { background: rgba(0, 255, 136, 0.15); color: var(--accent-primary); }
+        .exploit-tag-flash { background: rgba(168, 85, 247, 0.15); color: var(--accent-purple); }
+        .exploit-tag-key { background: rgba(255, 56, 96, 0.15); color: var(--accent-danger); }
+
+        /* === NEW BADGE === */
+        .new-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 7px;
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            color: var(--accent-secondary);
+            border-radius: 50px;
+            font-size: 0.62rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        /* === DEFI CHECKLIST TABS === */
+        .defi-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0;
+            flex-wrap: wrap;
+        }
+
+        .defi-tab {
+            padding: 8px 18px;
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.2s;
+            font-family: inherit;
+            font-weight: 500;
+        }
+
+        .defi-tab:hover { color: var(--text-primary); background: rgba(255,255,255,0.03); }
+
+        .defi-tab.active {
+            background: var(--bg-tertiary);
+            color: var(--accent-primary);
+            border-color: var(--border-color);
+            font-weight: 600;
+        }
+
+        .defi-panels-wrapper {
+            border: 1px solid var(--border-color);
+            border-radius: 0 12px 12px 12px;
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+        }
+
+        .defi-panel { display: none; }
+        .defi-panel.active { display: block; }
+
+        .defi-checklist {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .defi-checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            user-select: none;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .defi-checklist-item:last-child { border-bottom: none; }
+        .defi-checklist-item:hover .defi-checkbox { border-color: var(--accent-primary); }
+        .defi-checklist-item.done { color: var(--text-muted); }
+        .defi-checklist-item.done > span:last-child { text-decoration: line-through; }
+
+        .defi-checkbox {
+            width: 16px;
+            height: 16px;
+            min-width: 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 3px;
+            margin-top: 2px;
+            position: relative;
+            transition: all 0.15s;
+        }
+
+        .defi-checkbox.checked {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .defi-checkbox.checked::after {
+            content: '';
+            position: absolute;
+            left: 2px;
+            top: -1px;
+            width: 5px;
+            height: 9px;
+            border: 2px solid var(--bg-primary);
+            border-top: none;
+            border-left: none;
+            transform: rotate(45deg);
+        }
+
+        .defi-section-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            padding: 1rem 0 0.5rem;
+            display: block;
+        }
+
+        /* === PRINT === */
+        @media print {
+            header, .sidebar, .sidebar-overlay, .back-to-top,
+            .hamburger-btn, .search-wrapper, .theme-toggle,
+            .copy-btn, .severity-filters, .defi-tabs,
+            .checklist-progress, .checklist-reset { display: none !important; }
+
+            body::before { display: none; }
+            .container { margin-top: 0; }
+
+            main {
+                margin-left: 0 !important;
+                padding: 1rem !important;
+                max-width: 100% !important;
+            }
+
+            footer { margin-left: 0 !important; }
+
+            html.light-mode body, body {
+                background: white !important;
+                color: black !important;
+            }
+
+            .vuln-card, .pattern-card, .tool-card { page-break-inside: avoid; }
+            pre { white-space: pre-wrap; word-break: break-all; }
+            a::after { content: none !important; }
+        }
+
+        /* === RESPONSIVE (mobile) === */
+        @media (max-width: 1024px) {
+            .hamburger-btn { display: flex; }
+
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 999;
+            }
+
+            .sidebar.mobile-open { transform: translateX(0); }
+
+            .search-wrapper { display: none; }
+        }
+
+        /* === MODIFIER TABLE COMPACT === */
         /* Modifier table compact */
         .modifier-table {
             margin: 1.5rem 0;
@@ -931,31 +1429,43 @@
     </style>
 </head>
 <body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
     <header>
+        <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle navigation">
+            <span></span><span></span><span></span>
+        </button>
         <div class="logo">
             <div class="logo-icon">🔐</div>
             Solidity Security
         </div>
         <div class="header-links">
-            <a href="#vulnerabilities">Vulnerabilities</a>
-            <a href="#patterns">Patterns</a>
-            <a href="#best-practices">Best Practices</a>
+            <div class="search-wrapper">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search vulnerabilities..." autocomplete="off">
+                <button class="search-clear" id="searchClear" aria-label="Clear search">×</button>
+            </div>
+            <a href="#quick-scan">Quick Scan</a>
+            <a href="#vulnerabilities">Vulns</a>
+            <a href="#defi-checklist">DeFi</a>
             <a href="#tools">Tools</a>
-            <a href="https://github.com" target="_blank" class="github-star">
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme" title="Toggle light/dark mode">☀️</button>
+            <a href="https://github.com/mariano-aguero/solidity-security-cheatsheet" target="_blank" rel="noopener noreferrer" class="github-star">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                     <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
                 </svg>
-                Star on GitHub
+                GitHub
             </a>
         </div>
     </header>
 
     <div class="container">
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar">
             <div class="sidebar-section">
                 <div class="sidebar-title">Getting Started</div>
                 <nav class="sidebar-nav">
                     <a href="#overview"><span class="nav-icon">📖</span> Overview</a>
+                    <a href="#quick-scan"><span class="nav-icon">⚡</span> Quick Scan</a>
+                    <a href="#exploits"><span class="nav-icon">💀</span> Real Exploits</a>
                 </nav>
             </div>
 
@@ -976,6 +1486,12 @@
                     <a href="#randomness"><span class="nav-icon">🎲</span> Weak Randomness</a>
                     <a href="#force-feeding"><span class="nav-icon">💰</span> Force Feeding ETH</a>
                     <a href="#storage-collision"><span class="nav-icon">💾</span> Storage Collision</a>
+                    <a href="#flash-loans"><span class="nav-icon">⚡</span> Flash Loan Attacks</a>
+                    <a href="#vault-inflation"><span class="nav-icon">📈</span> Vault Inflation</a>
+                    <a href="#proxy-vulns"><span class="nav-icon">🔁</span> Proxy Vulnerabilities</a>
+                    <a href="#slippage"><span class="nav-icon">📉</span> Missing Slippage</a>
+                    <a href="#fee-on-transfer"><span class="nav-icon">💸</span> Fee-on-Transfer</a>
+                    <a href="#centralization"><span class="nav-icon">🏛️</span> Centralization Risk</a>
                 </nav>
             </div>
 
@@ -986,6 +1502,13 @@
                     <a href="#best-practices"><span class="nav-icon">✨</span> Best Practices</a>
                     <a href="#gas"><span class="nav-icon">⛽</span> Gas Optimization</a>
                     <a href="#checklist"><span class="nav-icon">✅</span> Security Checklist</a>
+                </nav>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">DeFi Audit</div>
+                <nav class="sidebar-nav">
+                    <a href="#defi-checklist"><span class="nav-icon">🏦</span> DeFi Checklists</a>
                 </nav>
             </div>
 
@@ -1003,27 +1526,206 @@
             <!-- Hero -->
             <section class="hero" id="overview">
                 <div class="hero-badge">
-                    <span>🔒</span> Security Reference Guide
+                    <span>🔒</span> Security Reference Guide &nbsp;·&nbsp; v2.0 &nbsp;·&nbsp; March 2026
                 </div>
                 <h1>
                     Solidity <span class="gradient">Security</span><br>Cheatsheet
                 </h1>
                 <p class="hero-description">
-                    A comprehensive guide to smart contract security. Learn about common vulnerabilities, security patterns, and best practices for Ethereum development.
+                    A comprehensive, production-grade reference for smart contract security. Covers vulnerabilities, DeFi-specific attack vectors, secure patterns, and real-world exploits.
                 </p>
                 <div class="hero-stats">
                     <div class="stat">
-                        <div class="stat-value">15+</div>
+                        <div class="stat-value">20+</div>
                         <div class="stat-label">Vulnerabilities</div>
                     </div>
                     <div class="stat">
-                        <div class="stat-value">50+</div>
+                        <div class="stat-value">100+</div>
                         <div class="stat-label">Code Examples</div>
                     </div>
                     <div class="stat">
-                        <div class="stat-value">10+</div>
+                        <div class="stat-value">$5B+</div>
+                        <div class="stat-label">Exploits Covered</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">12+</div>
                         <div class="stat-label">Security Tools</div>
                     </div>
+                </div>
+            </section>
+
+            <!-- Quick Scan / Red Flags -->
+            <section id="quick-scan">
+                <div class="section-header">
+                    <h2><span class="icon">⚡</span> 60-Second Red Flags</h2>
+                    <p>Scan for these patterns immediately when reviewing any contract. Each one warrants deeper investigation.</p>
+                </div>
+
+                <div class="quick-scan-grid">
+                    <div class="red-flag-row">
+                        <code class="red-flag-code">.call{value:</code>
+                        <div class="red-flag-desc">Potential reentrancy — check CEI order <a href="#reentrancy">→ Reentrancy</a></div>
+                    </div>
+                    <div class="red-flag-row">
+                        <code class="red-flag-code">.delegatecall(</code>
+                        <div class="red-flag-desc">Code injection risk if target is user-controlled <a href="#delegatecall">→ Delegatecall</a></div>
+                    </div>
+                    <div class="red-flag-row">
+                        <code class="red-flag-code">tx.origin</code>
+                        <div class="red-flag-desc">Phishing vulnerability — use msg.sender instead <a href="#tx-origin">→ tx.origin</a></div>
+                    </div>
+                    <div class="red-flag-row">
+                        <code class="red-flag-code">block.timestamp</code>
+                        <div class="red-flag-desc">Miner-manipulable by ±15s, not for randomness <a href="#timestamp">→ Timestamp</a></div>
+                    </div>
+                    <div class="red-flag-row">
+                        <code class="red-flag-code">selfdestruct(</code>
+                        <div class="red-flag-desc">Forces ETH into any contract, breaking invariants <a href="#force-feeding">→ Force Feeding</a></div>
+                    </div>
+                    <div class="red-flag-row">
+                        <code class="red-flag-code">ecrecover(</code>
+                        <div class="red-flag-desc">Returns address(0) on failure — check return value <a href="#signature">→ Signatures</a></div>
+                    </div>
+                    <div class="red-flag-row">
+                        <code class="red-flag-code">abi.encodePacked(</code>
+                        <div class="red-flag-desc">Hash collision if 2+ dynamic types — use abi.encode <a href="#signature">→ Signatures</a></div>
+                    </div>
+                    <div class="red-flag-row">
+                        <code class="red-flag-code">token.transfer(</code>
+                        <div class="red-flag-desc">No bool return check on non-standard ERC20s <a href="#external-calls">→ External Calls</a></div>
+                    </div>
+                    <div class="red-flag-row">
+                        <code class="red-flag-code">balanceOf(address(this))</code>
+                        <div class="red-flag-desc">Live balance — manipulable via donation/flash loan <a href="#vault-inflation">→ Vault Inflation</a></div>
+                    </div>
+                    <div class="red-flag-row">
+                        <code class="red-flag-code">amountOutMin: 0</code>
+                        <div class="red-flag-desc">Zero slippage — sandwich attack vector <a href="#slippage">→ Slippage</a></div>
+                    </div>
+                    <div class="red-flag-row">
+                        <code class="red-flag-code">getReserves()</code>
+                        <div class="red-flag-desc">Spot price — manipulable with flash loans <a href="#oracle">→ Oracle</a></div>
+                    </div>
+                    <div class="red-flag-row">
+                        <code class="red-flag-code">initialize(</code>
+                        <div class="red-flag-desc">Check if implementation contract is protected <a href="#proxy-vulns">→ Proxy</a></div>
+                    </div>
+                    <div class="red-flag-row">
+                        <code class="red-flag-code">unchecked {</code>
+                        <div class="red-flag-desc">Overflow protection disabled — verify it's safe <a href="#overflow">→ Overflow</a></div>
+                    </div>
+                    <div class="red-flag-row">
+                        <code class="red-flag-code">latestRoundData()</code>
+                        <div class="red-flag-desc">Check for staleness: validate updatedAt + answer > 0 <a href="#oracle">→ Oracle</a></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Real Exploits -->
+            <section id="exploits">
+                <div class="section-header">
+                    <h2><span class="icon">💀</span> Real-World Exploits</h2>
+                    <p>Major DeFi exploits — the vulnerability class that caused each one.</p>
+                </div>
+
+                <div class="table-wrapper">
+                    <table class="exploit-table">
+                        <thead>
+                            <tr>
+                                <th>Protocol</th>
+                                <th>Year</th>
+                                <th>Loss</th>
+                                <th>Vulnerability</th>
+                                <th>Summary</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>The DAO</strong></td>
+                                <td>2016</td>
+                                <td class="exploit-amount-critical">$60M</td>
+                                <td><span class="exploit-tag exploit-tag-reentrancy">Reentrancy</span></td>
+                                <td>State updated after external call — attacker drained recursively</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Parity Multisig</strong></td>
+                                <td>2017</td>
+                                <td class="exploit-amount-critical">$30M</td>
+                                <td><span class="exploit-tag exploit-tag-access">Access Control</span></td>
+                                <td>Unprotected <code>initWallet()</code> — anyone could become owner</td>
+                            </tr>
+                            <tr>
+                                <td><strong>bZx</strong></td>
+                                <td>2020</td>
+                                <td class="exploit-amount-high">$54M</td>
+                                <td><span class="exploit-tag exploit-tag-flash">Flash Loan</span></td>
+                                <td>Flash loan used to manipulate Uniswap spot price oracle</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Harvest Finance</strong></td>
+                                <td>2020</td>
+                                <td class="exploit-amount-high">$34M</td>
+                                <td><span class="exploit-tag exploit-tag-oracle">Oracle</span></td>
+                                <td>Curve pool price manipulated before vault deposit</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Cream Finance</strong></td>
+                                <td>2021</td>
+                                <td class="exploit-amount-critical">$130M</td>
+                                <td><span class="exploit-tag exploit-tag-flash">Flash Loan</span></td>
+                                <td>Flash loan + reentrancy via ERC-777 token callback</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Wormhole</strong></td>
+                                <td>2022</td>
+                                <td class="exploit-amount-critical">$320M</td>
+                                <td><span class="exploit-tag exploit-tag-logic">Logic Error</span></td>
+                                <td>Missing signature validation on guardian set — forged 120k wETH</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Ronin Bridge</strong></td>
+                                <td>2022</td>
+                                <td class="exploit-amount-critical">$625M</td>
+                                <td><span class="exploit-tag exploit-tag-key">Compromised Keys</span></td>
+                                <td>5 of 9 validator keys compromised — no onchain slashing</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Euler Finance</strong></td>
+                                <td>2023</td>
+                                <td class="exploit-amount-critical">$197M</td>
+                                <td><span class="exploit-tag exploit-tag-logic">Logic Error</span></td>
+                                <td>Missing health check on <code>donateToReserves()</code> enabled bad debt</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Curve Finance</strong></td>
+                                <td>2023</td>
+                                <td class="exploit-amount-critical">$70M</td>
+                                <td><span class="exploit-tag exploit-tag-reentrancy">Reentrancy</span></td>
+                                <td>Read-only reentrancy via Vyper compiler bug in certain versions</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Mango Markets</strong></td>
+                                <td>2022</td>
+                                <td class="exploit-amount-critical">$114M</td>
+                                <td><span class="exploit-tag exploit-tag-oracle">Oracle</span></td>
+                                <td>Self-manipulated spot price to inflate collateral value</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Nomad Bridge</strong></td>
+                                <td>2022</td>
+                                <td class="exploit-amount-critical">$190M</td>
+                                <td><span class="exploit-tag exploit-tag-logic">Logic Error</span></td>
+                                <td>Initialization set trusted root to 0x0 — any message accepted</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Bybit</strong></td>
+                                <td>2025</td>
+                                <td class="exploit-amount-critical">$1.5B</td>
+                                <td><span class="exploit-tag exploit-tag-key">Compromised Keys</span></td>
+                                <td>Safe multisig UI poisoned — malicious delegate approval tricked signers</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </section>
 
@@ -1034,8 +1736,20 @@
                     <p>Critical security issues in smart contract development with real-world examples and mitigations.</p>
                 </div>
 
+                <div class="severity-filters">
+                    <button class="filter-tab active" data-filter="All">All <span class="filter-count" id="count-all"></span></button>
+                    <button class="filter-tab" data-filter="Critical">Critical <span class="filter-count" id="count-critical"></span></button>
+                    <button class="filter-tab" data-filter="High">High <span class="filter-count" id="count-high"></span></button>
+                    <button class="filter-tab" data-filter="Medium">Medium <span class="filter-count" id="count-medium"></span></button>
+                </div>
+
+                <div id="searchEmpty" class="search-empty">
+                    <span>🔍</span>
+                    <p>No vulnerabilities match your search.</p>
+                </div>
+
                 <!-- 1. Reentrancy -->
-                <article class="vuln-card" id="reentrancy">
+                <article class="vuln-card" id="reentrancy" data-severity="Critical">
                     <div class="vuln-header">
                         <div class="vuln-number">01</div>
                         <div class="vuln-title-wrap">
@@ -1142,7 +1856,7 @@ contract Attacker {
                                 Copy
                             </button>
                         </div>
-                        <pre><code class="language-solidity">import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+                        <pre><code class="language-solidity">import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 contract SecureBankWithGuard is ReentrancyGuard {
     mapping(address => uint) public balances;
@@ -1174,7 +1888,7 @@ contract SecureBankWithGuard is ReentrancyGuard {
                 </article>
 
                 <!-- 2. Integer Overflow -->
-                <article class="vuln-card" id="overflow">
+                <article class="vuln-card" id="overflow" data-severity="Critical">
                     <div class="vuln-header">
                         <div class="vuln-number">02</div>
                         <div class="vuln-title-wrap">
@@ -1288,7 +2002,7 @@ contract OptimizedLoop {
                 </article>
 
                 <!-- 3. Access Control -->
-                <article class="vuln-card" id="access-control">
+                <article class="vuln-card" id="access-control" data-severity="Critical">
                     <div class="vuln-header">
                         <div class="vuln-number">03</div>
                         <div class="vuln-title-wrap">
@@ -1392,7 +2106,7 @@ contract SecureImplementation is Initializable {
                 </article>
 
                 <!-- 4. tx.origin -->
-                <article class="vuln-card" id="tx-origin">
+                <article class="vuln-card" id="tx-origin" data-severity="High">
                     <div class="vuln-header">
                         <div class="vuln-number">04</div>
                         <div class="vuln-title-wrap">
@@ -1475,7 +2189,7 @@ contract NoContractCalls {
                 </article>
 
                 <!-- 5. Delegatecall -->
-                <article class="vuln-card" id="delegatecall">
+                <article class="vuln-card" id="delegatecall" data-severity="High">
                     <div class="vuln-header">
                         <div class="vuln-number">05</div>
                         <div class="vuln-title-wrap">
@@ -1567,7 +2281,7 @@ contract UnstructuredStorageProxy {
                 </article>
 
                 <!-- 6. Front-Running -->
-                <article class="vuln-card" id="frontrunning">
+                <article class="vuln-card" id="frontrunning" data-severity="High">
                     <div class="vuln-header">
                         <div class="vuln-number">06</div>
                         <div class="vuln-title-wrap">
@@ -1662,7 +2376,7 @@ contract ProtectedDEX {
                 </article>
 
                 <!-- 7. DoS -->
-                <article class="vuln-card" id="dos">
+                <article class="vuln-card" id="dos" data-severity="Medium">
                     <div class="vuln-header">
                         <div class="vuln-number">07</div>
                         <div class="vuln-title-wrap">
@@ -1758,7 +2472,7 @@ contract SecureVoting {
                 </article>
 
                 <!-- 8. Oracle -->
-                <article class="vuln-card" id="oracle">
+                <article class="vuln-card" id="oracle" data-severity="Critical">
                     <div class="vuln-header">
                         <div class="vuln-number">08</div>
                         <div class="vuln-title-wrap">
@@ -1841,7 +2555,7 @@ contract SecureLending {
                 </article>
 
                 <!-- 9. Signature Replay -->
-                <article class="vuln-card" id="signature">
+                <article class="vuln-card" id="signature" data-severity="High">
                     <div class="vuln-header">
                         <div class="vuln-number">09</div>
                         <div class="vuln-title-wrap">
@@ -1936,7 +2650,7 @@ contract SecureLending {
                 </article>
 
                 <!-- Additional vulnerabilities as compact cards -->
-                <article class="vuln-card" id="external-calls">
+                <article class="vuln-card" id="external-calls" data-severity="High">
                     <div class="vuln-header">
                         <div class="vuln-number">10</div>
                         <div class="vuln-title-wrap">
@@ -1980,7 +2694,7 @@ function safeCallback(address target) external {
                     </div>
                 </article>
 
-                <article class="vuln-card" id="timestamp">
+                <article class="vuln-card" id="timestamp" data-severity="Medium">
                     <div class="vuln-header">
                         <div class="vuln-number">11</div>
                         <div class="vuln-title-wrap">
@@ -2023,7 +2737,7 @@ contract BlockBasedTiming {
                     </div>
                 </article>
 
-                <article class="vuln-card" id="randomness">
+                <article class="vuln-card" id="randomness" data-severity="Medium">
                     <div class="vuln-header">
                         <div class="vuln-number">12</div>
                         <div class="vuln-title-wrap">
@@ -2062,7 +2776,7 @@ contract SecureRandom is VRFConsumerBaseV2 {
                     </div>
                 </article>
 
-                <article class="vuln-card" id="force-feeding">
+                <article class="vuln-card" id="force-feeding" data-severity="Medium">
                     <div class="vuln-header">
                         <div class="vuln-number">13</div>
                         <div class="vuln-title-wrap">
@@ -2095,7 +2809,7 @@ contract SecureRandom is VRFConsumerBaseV2 {
                     </div>
                 </article>
 
-                <article class="vuln-card" id="storage-collision">
+                <article class="vuln-card" id="storage-collision" data-severity="Critical">
                     <div class="vuln-header">
                         <div class="vuln-number">14</div>
                         <div class="vuln-title-wrap">
@@ -2129,6 +2843,642 @@ contract ImplementationV2 {
 // Only append at the end</code></pre>
                     </div>
                 </article>
+
+                <!-- 15. Flash Loan Attacks -->
+                <article class="vuln-card" id="flash-loans" data-severity="Critical">
+                    <div class="vuln-header">
+                        <div class="vuln-number">15</div>
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">Flash Loan Attacks <span class="new-badge">New</span></h3>
+                            <p class="vuln-subtitle">Single-transaction unsecured loans enable massive manipulation</p>
+                        </div>
+                        <span class="severity-badge severity-critical">Critical</span>
+                    </div>
+
+                    <p>Flash loans allow borrowing any amount of tokens within a single transaction — with zero collateral — as long as it's repaid in the same tx. Attackers use them to temporarily control massive capital, manipulating prices, governance votes, or collateral ratios before repaying.</p>
+
+                    <div class="impact-box">
+                        <strong>Real-world Impact:</strong> bZx ($54M, 2020) — flash loan manipulated Uniswap spot price used as oracle. Cream Finance ($130M, 2021) — flash loan + ERC-777 reentrancy callback. Euler Finance ($197M, 2023) — flash loan to create bad debt via missing health check.
+                    </div>
+
+                    <h4>Attack Vectors:</h4>
+                    <ul class="types-list">
+                        <li><strong>Price manipulation:</strong> Borrow → move spot price → exploit protocol → repay</li>
+                        <li><strong>Governance takeover:</strong> Borrow governance tokens → vote → repay (if no snapshot delay)</li>
+                        <li><strong>Collateral inflation:</strong> Flash borrow to inflate collateral price, take undercollateralized loan</li>
+                        <li><strong>Vault donation:</strong> Flash borrow → donate to vault → manipulate share price → withdraw</li>
+                    </ul>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ VULNERABLE — Spot Price Oracle</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">contract VulnerableLending {
+    IUniswapV2Pair public pair;
+
+    function getPrice() public view returns (uint256) {
+        (uint112 reserve0, uint112 reserve1,) = pair.getReserves();
+        // Spot price: trivially manipulable in same tx
+        return (reserve1 * 1e18) / reserve0;
+    }
+
+    function borrow(uint256 amount) external {
+        uint256 price = getPrice(); // Attacker moves this first
+        uint256 collateralValue = collateral[msg.sender] * price;
+        require(collateralValue >= amount * COLLATERAL_RATIO);
+        // ... lend amount
+    }
+}
+
+// Flash loan attack flow:
+// 1. Flash loan 1000 ETH
+// 2. Buy token in Uniswap → price spikes 10x
+// 3. borrow() sees inflated collateral → extracts huge loan
+// 4. Sell token back → price restored
+// 5. Repay flash loan + profit</code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ VULNERABLE — Flash Loan Governance</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">contract VulnerableGovernance {
+    IERC20 public token;
+    mapping(uint => mapping(address => bool)) public voted;
+
+    function castVote(uint proposalId, bool support) external {
+        // Live balance — flash loan borrower has huge voting power
+        uint votes = token.balanceOf(msg.sender);
+        require(!voted[proposalId][msg.sender]);
+        voted[proposalId][msg.sender] = true;
+        // ... tally votes
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE — TWAP + Snapshot Voting</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">// TWAP oracle (Uniswap V3)
+import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
+
+function getTWAP(address pool, uint32 twapPeriod) internal view returns (uint256) {
+    uint32[] memory secondsAgos = new uint32[](2);
+    secondsAgos[0] = twapPeriod; // e.g., 1800 = 30 min
+    secondsAgos[1] = 0;
+    (int56[] memory tickCumulatives,) = IUniswapV3Pool(pool).observe(secondsAgos);
+    int56 tickDelta = tickCumulatives[1] - tickCumulatives[0];
+    int24 avgTick = int24(tickDelta / int56(uint56(twapPeriod)));
+    // Convert tick to price
+    return TickMath.getSqrtRatioAtTick(avgTick);
+}
+
+// Snapshot-based governance (flash loan resistant)
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
+
+contract SecureGovernance {
+    ERC20Votes public token;
+    mapping(uint => uint) public proposalSnapshot; // block number at proposal
+
+    function castVote(uint proposalId, bool support) external {
+        uint snapshotBlock = proposalSnapshot[proposalId];
+        // Voting power at snapshot block — can't be flash-loaned
+        uint votes = token.getPastVotes(msg.sender, snapshotBlock);
+        // ...
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="prevention-list">
+                        <h4>🛡️ Prevention</h4>
+                        <ul>
+                            <li>Never use spot prices (<code>getReserves()</code>) for critical valuations — use TWAP</li>
+                            <li>Prefer Chainlink price feeds with staleness checks over AMM oracles</li>
+                            <li>Use <code>getPastVotes(voter, snapshotBlock)</code> — not live <code>balanceOf()</code></li>
+                            <li>Add voting delay between proposal creation and voting start</li>
+                            <li>Measure actual token balance delta (<code>balanceAfter - balanceBefore</code>) for vault deposits</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <!-- 16. ERC-4626 Vault Inflation -->
+                <article class="vuln-card" id="vault-inflation" data-severity="High">
+                    <div class="vuln-header">
+                        <div class="vuln-number">16</div>
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">ERC-4626 Vault Inflation Attack <span class="new-badge">New</span></h3>
+                            <p class="vuln-subtitle">First depositor manipulates share price to steal from subsequent depositors</p>
+                        </div>
+                        <span class="severity-badge severity-high">High</span>
+                    </div>
+
+                    <p>When a vault has zero shares outstanding, an attacker deposits 1 wei to get 1 share, then directly donates a large amount to the vault. The next depositor's shares are calculated against the inflated total assets, rounding down to 0 — losing their entire deposit.</p>
+
+                    <div class="impact-box">
+                        <strong>Real-world Impact:</strong> Multiple yield aggregators and ERC-4626 vaults were vulnerable at launch. OpenZeppelin redesigned their ERC-4626 implementation specifically to address this with virtual offset decimals.
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ VULNERABLE — Basic Share Calculation</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">contract VulnerableVault {
+    IERC20 public asset;
+    uint256 public totalShares;
+    mapping(address => uint256) public shares;
+
+    function deposit(uint256 assets) external returns (uint256 sharesToMint) {
+        // Step 1: Attacker deposits 1 wei → gets 1 share (totalShares == 0)
+        // Step 2: Attacker donates 1000e18 directly to vault (no shares minted)
+        // Step 3: Victim deposits 999e18:
+        //   sharesToMint = 999e18 * 1 / (1000e18 + 1) = 0 (rounds down!)
+        //   Victim gets 0 shares, loses everything
+        if (totalShares == 0) {
+            sharesToMint = assets;
+        } else {
+            sharesToMint = assets * totalShares / totalAssets();
+        }
+        // ...
+    }
+
+    function totalAssets() public view returns (uint256) {
+        return asset.balanceOf(address(this)); // Live balance — donatable!
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE — Virtual Offset (OpenZeppelin Pattern)</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
+
+// OpenZeppelin ERC4626 uses virtual offset to prevent inflation attack
+contract SecureVault is ERC4626 {
+    constructor(IERC20 asset_)
+        ERC20("Vault Token", "vTKN")
+        ERC4626(asset_)
+    {}
+
+    // Override _decimalsOffset() to increase virtual shares.
+    // Default: 0. Setting to 3 means 1000x virtual shares offset.
+    // Attacker would need to donate 1000x more to move share price 1 unit.
+    function _decimalsOffset() internal pure override returns (uint8) {
+        return 3; // 10^3 = 1000 virtual shares offset
+    }
+}
+
+// Manual implementation of the virtual offset pattern:
+function _convertToShares(uint256 assets, Math.Rounding rounding)
+    internal view returns (uint256)
+{
+    // Virtual shares and assets prevent first-deposit manipulation
+    return assets.mulDiv(
+        totalSupply() + 10 ** _decimalsOffset(),  // virtual shares
+        totalAssets() + 1,                          // virtual assets
+        rounding
+    );
+}
+
+// Always round in favor of the vault:
+// - On deposit/mint: round DOWN (fewer shares to minter)
+// - On withdraw/redeem: round UP (more assets from vault)</code></pre>
+                    </div>
+
+                    <div class="prevention-list">
+                        <h4>🛡️ Prevention</h4>
+                        <ul>
+                            <li>Use OpenZeppelin's <code>ERC4626</code> — it includes virtual offset protection by default</li>
+                            <li>Override <code>_decimalsOffset()</code> to return 3+ for high-value vaults</li>
+                            <li>Rounding direction: always favor the vault (round down for minting, up for withdrawing)</li>
+                            <li>Consider minting dead shares at deployment to set initial exchange rate</li>
+                            <li>Never use raw <code>balanceOf(address(this))</code> as sole measure of total assets</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <!-- 17. Proxy Vulnerabilities -->
+                <article class="vuln-card" id="proxy-vulns" data-severity="Critical">
+                    <div class="vuln-header">
+                        <div class="vuln-number">17</div>
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">Proxy Vulnerabilities <span class="new-badge">New</span></h3>
+                            <p class="vuln-subtitle">Upgradeable contract patterns introduce unique attack surfaces</p>
+                        </div>
+                        <span class="severity-badge severity-critical">Critical</span>
+                    </div>
+
+                    <p>Proxy patterns (UUPS, Transparent, Beacon) separate logic from storage. This introduces three critical issues: uninitialized implementation contracts, missing upgrade authorization, and function selector clashing between proxy and implementation.</p>
+
+                    <div class="impact-box">
+                        <strong>Real-world Impact:</strong> Wormhole ($320M, 2022) — missing validation in upgradeable bridge contract. Parity Multisig ($30M, 2017) — unprotected <code>initWallet()</code> let anyone become owner. Multiple protocols lost funds to uninitialized implementation contracts.
+                    </div>
+
+                    <h4>Vulnerability Types:</h4>
+                    <ul class="types-list">
+                        <li><strong>Uninitialized implementation:</strong> Attacker calls <code>initialize()</code> directly on impl contract</li>
+                        <li><strong>Missing upgrade auth:</strong> UUPS <code>upgradeToAndCall()</code> without access control</li>
+                        <li><strong>Selector clash:</strong> Proxy function selector collides with implementation</li>
+                        <li><strong>Storage collision:</strong> Variables overwrite each other across upgrades</li>
+                    </ul>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ VULNERABLE — Uninitialized Implementation</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">// Anyone can call initialize() on the implementation contract directly
+// Attacker becomes owner → calls upgradeToAndCall() → replaces logic → drains proxy
+contract VulnerableImplementation is UUPSUpgradeable {
+    address public owner;
+
+    function initialize(address _owner) external initializer {
+        // No _disableInitializers() in constructor!
+        owner = _owner;
+    }
+
+    // ❌ Missing access control on upgrade
+    function _authorizeUpgrade(address) internal override {
+        // Anyone can upgrade!
+    }
+}
+
+// ❌ ALSO VULNERABLE: UUPS with no auth check
+contract AnotherVuln is UUPSUpgradeable {
+    function _authorizeUpgrade(address newImpl) internal override {
+        // Empty — anyone can call upgradeTo() and replace the logic
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE — Protected UUPS Implementation</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+
+contract SecureImplementation is Initializable, UUPSUpgradeable, OwnableUpgradeable {
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        // Disables initialization on the logic contract itself.
+        // Prevents attacker from calling initialize() on the impl directly.
+        _disableInitializers();
+    }
+
+    function initialize(address initialOwner) external initializer {
+        __Ownable_init(initialOwner);
+        __UUPSUpgradeable_init();
+    }
+
+    // Only owner can upgrade — and only with a 2-day timelock in production
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override
+        onlyOwner
+    {}
+}
+
+// Storage layout: use ERC-7201 namespaced storage to avoid collisions
+// @custom:storage-location erc7201:myprotocol.main
+struct MainStorage {
+    uint256 value;
+    address admin;
+    uint256[48] __gap; // Reserve slots for future variables
+}</code></pre>
+                    </div>
+
+                    <div class="prevention-list">
+                        <h4>🛡️ Prevention</h4>
+                        <ul>
+                            <li>Always call <code>_disableInitializers()</code> in the implementation constructor</li>
+                            <li>Add <code>onlyOwner</code> (or timelock) to <code>_authorizeUpgrade()</code></li>
+                            <li>Use OpenZeppelin Upgrades plugin: <code>npx hardhat check</code> catches storage collisions</li>
+                            <li>Never remove or reorder storage variables — only append to the end</li>
+                            <li>Use ERC-7201 namespaced storage for complex contracts with multiple inheritance</li>
+                            <li>Add timelocks: at minimum 24-48h between upgrade proposal and execution</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <!-- 18. Missing Slippage Protection -->
+                <article class="vuln-card" id="slippage" data-severity="High">
+                    <div class="vuln-header">
+                        <div class="vuln-number">18</div>
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">Missing Slippage Protection <span class="new-badge">New</span></h3>
+                            <p class="vuln-subtitle">Swaps without minAmountOut are sandwich-attackable by MEV bots</p>
+                        </div>
+                        <span class="severity-badge severity-high">High</span>
+                    </div>
+
+                    <p>Every swap on an AMM executes at market price at the time of inclusion. Without a minimum output amount (<code>amountOutMin</code>) and deadline, MEV bots can sandwich the transaction: front-run to move the price, let your tx execute at a worse rate, then back-run to profit from the difference.</p>
+
+                    <div class="impact-box">
+                        <strong>Real-world Impact:</strong> Harvest Finance ($34M, 2020) — attacker manipulated Curve pool USDC/USDT price before vault deposits. Hundreds of millions lost to MEV sandwich attacks annually across DeFi users.
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ VULNERABLE — No Slippage or Deadline</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">interface IUniswapV2Router {
+    function swapExactTokensForTokens(
+        uint amountIn,
+        uint amountOutMin,
+        address[] calldata path,
+        address to,
+        uint deadline
+    ) external returns (uint[] memory amounts);
+}
+
+contract VulnerableSwapper {
+    IUniswapV2Router router;
+
+    function swap(address tokenIn, address tokenOut, uint256 amountIn) external {
+        address[] memory path = new address[](2);
+        path[0] = tokenIn;
+        path[1] = tokenOut;
+
+        // ❌ amountOutMin = 0: accept any output (even 1 wei)
+        // ❌ deadline = type(uint256).max: valid forever
+        router.swapExactTokensForTokens(
+            amountIn,
+            0,                      // No slippage protection!
+            path,
+            msg.sender,
+            type(uint256).max       // No deadline!
+        );
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE — User-Specified Slippage + Deadline</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">contract SecureSwapper {
+    IUniswapV2Router router;
+    uint256 constant MAX_SLIPPAGE_BPS = 1000; // 10% absolute maximum
+
+    function swap(
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn,
+        uint256 minAmountOut,   // Caller specifies minimum acceptable output
+        uint256 deadline        // Caller specifies expiry timestamp
+    ) external {
+        require(minAmountOut > 0, "Slippage: minAmountOut cannot be zero");
+        require(deadline > block.timestamp, "Slippage: deadline has passed");
+
+        // Optional: enforce maximum slippage tolerance
+        uint256 expectedOut = getQuote(tokenIn, tokenOut, amountIn);
+        uint256 minAllowed = expectedOut * (10000 - MAX_SLIPPAGE_BPS) / 10000;
+        require(minAmountOut >= minAllowed, "Slippage: tolerance too high");
+
+        address[] memory path = new address[](2);
+        path[0] = tokenIn;
+        path[1] = tokenOut;
+
+        router.swapExactTokensForTokens(
+            amountIn,
+            minAmountOut,
+            path,
+            msg.sender,
+            deadline
+        );
+    }
+
+    // Also protect vault deposits
+    function depositToVault(
+        address vault,
+        uint256 assets,
+        uint256 minSharesOut  // Protect against vault inflation + slippage
+    ) external returns (uint256 shares) {
+        shares = IERC4626(vault).deposit(assets, msg.sender);
+        require(shares >= minSharesOut, "Deposit: insufficient shares received");
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="prevention-list">
+                        <h4>🛡️ Prevention</h4>
+                        <ul>
+                            <li>Always accept <code>minAmountOut</code> and <code>deadline</code> as user parameters — never hardcode</li>
+                            <li>Reject <code>minAmountOut == 0</code> — it means "I accept any output including dust"</li>
+                            <li>For vault deposits/mints, also require <code>minSharesOut</code> parameter</li>
+                            <li>Add <code>deadline</code> checks: <code>require(block.timestamp <= deadline)</code></li>
+                            <li>Integrate with private mempool (Flashbots Protect) to reduce MEV exposure</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <!-- 19. Fee-on-Transfer Tokens -->
+                <article class="vuln-card" id="fee-on-transfer" data-severity="High">
+                    <div class="vuln-header">
+                        <div class="vuln-number">19</div>
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">Fee-on-Transfer Token Handling <span class="new-badge">New</span></h3>
+                            <p class="vuln-subtitle">Protocols assuming received == transferred break with deflationary tokens</p>
+                        </div>
+                        <span class="severity-badge severity-high">High</span>
+                    </div>
+
+                    <p>Some ERC-20 tokens charge a fee on every transfer, meaning the recipient receives <em>less</em> than the sender's specified amount. Protocols that credit the full <code>amount</code> parameter — without verifying actual balance delta — record inflated balances, enabling attackers to drain the difference.</p>
+
+                    <div class="impact-box">
+                        <strong>Affected Token Types:</strong> Fee-on-transfer (PAXG, USDT in certain configs, STA), rebasing tokens (stETH, aTokens — balances change on every block), tokens with blacklists (USDC, USDT — transfers to/from blacklisted addresses revert).
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ VULNERABLE — Trusting the amount Parameter</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">contract VulnerableVault {
+    IERC20 public token;
+    mapping(address => uint256) public balances;
+
+    function deposit(uint256 amount) external {
+        // For a 1% fee-on-transfer token:
+        //   User calls deposit(1000)
+        //   token.transferFrom sends 1000, but vault receives 990
+        //   We credit 1000 to the user — 10 tokens appear from nowhere
+        token.transferFrom(msg.sender, address(this), amount);
+        balances[msg.sender] += amount; // ❌ Should be actual received amount!
+    }
+
+    function withdraw(uint256 amount) external {
+        require(balances[msg.sender] >= amount);
+        balances[msg.sender] -= amount;
+        token.transfer(msg.sender, amount); // ❌ May fail if vault is insolvent
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE — Measure Actual Balance Delta</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
+contract SecureVault {
+    using SafeERC20 for IERC20;
+
+    IERC20 public token;
+    mapping(address => uint256) public balances;
+
+    function deposit(uint256 amount) external {
+        uint256 balanceBefore = token.balanceOf(address(this));
+
+        // Use SafeERC20 to handle non-standard return values
+        token.safeTransferFrom(msg.sender, address(this), amount);
+
+        uint256 balanceAfter = token.balanceOf(address(this));
+        uint256 actualReceived = balanceAfter - balanceBefore;
+
+        // Credit only what was actually received
+        balances[msg.sender] += actualReceived;
+    }
+
+    // Handling rebasing tokens (stETH, aTokens):
+    // Store shares, not absolute balances, since balances change over time
+    // stETH: use IStETH.getSharesByPooledEth() and sharesOf()
+    // Aave aTokens: track aToken balance changes as yield
+
+    // Whitelist approach for safer integration:
+    mapping(address => bool) public supportedTokens;
+
+    function addSupportedToken(address token_) external onlyOwner {
+        // Only add after verifying: no fee-on-transfer, not rebasing
+        supportedTokens[token_] = true;
+    }
+}</code></pre>
+                    </div>
+
+                    <div class="prevention-list">
+                        <h4>🛡️ Prevention</h4>
+                        <ul>
+                            <li>Always use <code>balanceBefore/balanceAfter</code> pattern to measure actual received amount</li>
+                            <li>Use <code>SafeERC20.safeTransferFrom()</code> — handles non-standard return values</li>
+                            <li>Explicitly document and test which token types your protocol supports</li>
+                            <li>For rebasing tokens (stETH): track shares, not absolute balances</li>
+                            <li>Consider a token whitelist — only support explicitly tested tokens</li>
+                            <li>Test with USDT's non-standard approve (must set to 0 first before changing)</li>
+                        </ul>
+                    </div>
+                </article>
+
+                <!-- 20. Centralization Risk -->
+                <article class="vuln-card" id="centralization" data-severity="High">
+                    <div class="vuln-header">
+                        <div class="vuln-number">20</div>
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">Centralization Risk <span class="new-badge">New</span></h3>
+                            <p class="vuln-subtitle">Single privileged keys, instant admin actions, no timelocks</p>
+                        </div>
+                        <span class="severity-badge severity-high">High</span>
+                    </div>
+
+                    <p>Many DeFi protocols are technically secure against external attackers but trivially exploitable by their own deployers. A single EOA with <code>onlyOwner</code> on upgrade and drain functions can rug users at any moment. Even well-intentioned teams can have keys compromised — Ronin ($625M) lost funds because 5 of 9 validators were controlled by a single entity.</p>
+
+                    <div class="impact-box">
+                        <strong>Real-world Impact:</strong> Ronin Bridge ($625M, 2022) — 5/9 validators controlled by Axie Infinity team. Bybit ($1.5B, 2025) — Safe multisig transaction spoofed via compromised frontend. Numerous "rug pull" protocols with unprotected admin keys.
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ VULNERABLE — Single EOA with God Mode</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">contract VulnerableProtocol is Ownable {
+    // ❌ Single EOA can drain all funds instantly
+    function emergencyWithdraw(address token, uint256 amount) external onlyOwner {
+        IERC20(token).transfer(owner(), amount);
+    }
+
+    // ❌ Single-step ownership transfer — typo = permanent loss
+    // Ownable uses transferOwnership(newOwner) with no acceptance step
+    // If newOwner is wrong address, ownership is lost forever
+
+    // ❌ No timelock on critical parameter changes
+    function setFee(uint256 newFee) external onlyOwner {
+        fee = newFee; // Can change to 100% instantly
+    }
+
+    // ❌ Instant upgrades — malicious logic in same block
+    function _authorizeUpgrade(address) internal override onlyOwner {}
+}</code></pre>
+                    </div>
+
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SECURE — Multisig + Timelock + Two-Step Transfer</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">import "@openzeppelin/contracts/access/Ownable2Step.sol";
+import "@openzeppelin/contracts/governance/TimelockController.sol";
+
+// Ownable2Step: requires new owner to call acceptOwnership()
+// Prevents accidental transfer to wrong address
+contract SecureProtocol is Ownable2Step {
+    TimelockController public immutable timelock;
+
+    bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
+    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+
+    uint256 public constant MIN_DELAY = 2 days; // Minimum timelock delay
+
+    constructor(address multisig) Ownable(multisig) {
+        // Owner should be a Gnosis Safe multisig, not an EOA
+    }
+
+    // Role separation: not everything needs to be onlyOwner
+    function pauseProtocol() external onlyRole(GUARDIAN_ROLE) {
+        _pause(); // Guardian (fast) can pause
+    }
+
+    function setFee(uint256 newFee) external {
+        // Critical changes must go through timelock
+        require(msg.sender == address(timelock), "Use timelock");
+        require(newFee <= 1000, "Fee: max 10%"); // Hard cap
+        fee = newFee;
+    }
+}
+
+// Deployment checklist for centralization:
+// 1. Owner = Gnosis Safe multisig (3/5 or 4/7)
+// 2. Upgrades behind TimelockController (min 48h delay)
+// 3. Use Ownable2Step for all ownership transfers
+// 4. Separate roles: guardian (pause), operator (config), admin (upgrade)
+// 5. Document and publish all admin key holders</code></pre>
+                    </div>
+
+                    <div class="prevention-list">
+                        <h4>🛡️ Prevention</h4>
+                        <ul>
+                            <li>Use <code>Ownable2Step</code> — requires new owner to accept, prevents accidental transfers</li>
+                            <li>Replace EOA owner with Gnosis Safe multisig (3/5 minimum for mainnet)</li>
+                            <li>All upgrades and critical parameter changes behind <code>TimelockController</code> (48h+)</li>
+                            <li>Separate roles: Guardian (can pause), Operator (config), Admin (upgrade/drain)</li>
+                            <li>Hard-cap all protocol parameters (max fee, max borrow ratio) — even admin can't exceed</li>
+                            <li>Publish admin key holders in docs — transparency enables community monitoring</li>
+                        </ul>
+                    </div>
+                </article>
+
             </section>
 
             <!-- Security Patterns -->
@@ -2170,8 +3520,8 @@ contract ImplementationV2 {
                         <span class="code-label secure">Combined Pattern Example</span>
                         <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                     </div>
-                    <pre><code class="language-solidity">import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+                    <pre><code class="language-solidity">import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract SecureVault is ReentrancyGuard, Pausable, Ownable {
@@ -2409,6 +3759,109 @@ require(amount > 0 && balances[msg.sender] >= amount);</code></pre>
                 </div>
             </section>
 
+            <!-- DeFi Checklists -->
+            <section id="defi-checklist">
+                <div class="section-header">
+                    <h2><span class="icon">🏦</span> DeFi Audit Checklists</h2>
+                    <p>Protocol-specific security checks. Click items to track your progress.</p>
+                </div>
+                <div class="defi-tabs">
+                    <button class="defi-tab active" data-panel="amm">AMM / DEX</button>
+                    <button class="defi-tab" data-panel="lending">Lending</button>
+                    <button class="defi-tab" data-panel="vault">Vault / ERC-4626</button>
+                    <button class="defi-tab" data-panel="governance">Governance</button>
+                    <button class="defi-tab" data-panel="bridge">Bridge</button>
+                </div>
+                <div class="defi-panels-wrapper">
+                    <div class="defi-panel active" id="panel-amm">
+                        <span class="defi-section-title">Pool Logic</span>
+                        <ul class="defi-checklist">
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Pool invariants (x*y=k) correctly maintained after every operation</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Pool reserves not manipulable via direct token transfers</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Fee calculation correct and not gameable through rounding</span></li>
+                        </ul>
+                        <span class="defi-section-title">Slippage &amp; MEV</span>
+                        <ul class="defi-checklist">
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>All swaps require <code>amountOutMin</code> — never accepts 0</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Deadlines enforced on all swap transactions</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>TWAP used for pricing — not spot price from <code>getReserves()</code></span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>First deposit inflation attack prevented (minimum liquidity / dead shares)</span></li>
+                        </ul>
+                        <span class="defi-section-title">LP Token Accounting</span>
+                        <ul class="defi-checklist">
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>LP minting is proportional to liquidity provided</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Reentrancy guard on all state-changing pool functions</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Fee-on-transfer tokens handled with balance-delta measurement</span></li>
+                        </ul>
+                    </div>
+                    <div class="defi-panel" id="panel-lending">
+                        <span class="defi-section-title">Oracle &amp; Pricing</span>
+                        <ul class="defi-checklist">
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>No spot price oracles — use TWAP or Chainlink</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Chainlink staleness check: <code>updatedAt</code> + <code>answer &gt; 0</code> + sequencer uptime (L2)</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Fallback if primary oracle fails</span></li>
+                        </ul>
+                        <span class="defi-section-title">Collateral &amp; Liquidation</span>
+                        <ul class="defi-checklist">
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Collateral factor changes have delay — no instant liquidation of existing positions</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Liquidation threshold correctly above collateral factor</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Partial liquidations do not leave dust positions</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Bad debt socialization mechanism defined</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Cannot borrow own collateral (recursive self-collateralization)</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Health factor re-checked after every action that changes it</span></li>
+                        </ul>
+                    </div>
+                    <div class="defi-panel" id="panel-vault">
+                        <span class="defi-section-title">Share Accounting</span>
+                        <ul class="defi-checklist">
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>First depositor inflation attack prevented (virtual offset or dead shares)</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Rounding direction always favors the vault (not the user)</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span><code>convertToShares</code> and <code>convertToAssets</code> are consistent</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span><code>previewDeposit</code> matches actual <code>deposit</code> execution</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Share price can only decrease via actual losses</span></li>
+                        </ul>
+                        <span class="defi-section-title">Fees &amp; Assets</span>
+                        <ul class="defi-checklist">
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span><code>totalAssets()</code> includes all protocol assets including deployed strategy funds</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Fees cannot be extracted retroactively from existing depositors</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Maximum fee hard-cap — admin cannot set 100% fee</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Emergency strategy withdrawal path exists</span></li>
+                        </ul>
+                    </div>
+                    <div class="defi-panel" id="panel-governance">
+                        <span class="defi-section-title">Flash Loan Resistance</span>
+                        <ul class="defi-checklist">
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Voting uses <code>getPastVotes(voter, snapshotBlock)</code> — not live balance</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Voting delay between proposal creation and vote start</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Quorum not trivially achievable by single entity</span></li>
+                        </ul>
+                        <span class="defi-section-title">Proposals &amp; Execution</span>
+                        <ul class="defi-checklist">
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Minimum proposal threshold prevents spam</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Timelock between approval and execution (min 48h)</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Executed proposals marked — cannot re-execute</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Emergency bypass appropriately restricted and documented</span></li>
+                        </ul>
+                    </div>
+                    <div class="defi-panel" id="panel-bridge">
+                        <span class="defi-section-title">Message Validation</span>
+                        <ul class="defi-checklist">
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Messages signed by sufficient validators (check threshold, not just &ge;1)</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Replay protection: nonce per chain + chain ID in message hash</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Source chain identity validated on destination</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Message timeouts enforced</span></li>
+                        </ul>
+                        <span class="defi-section-title">Token &amp; Validator</span>
+                        <ul class="defi-checklist">
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Lock-and-mint accounting balances correctly across chains</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>No single entity controls majority of validators</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Slashing mechanism exists for malicious validators</span></li>
+                            <li class="defi-checklist-item"><span class="defi-checkbox"></span><span>Failed destination tx has retry or refund path</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
             <!-- Tools -->
             <section id="tools">
                 <div class="section-header">
@@ -2418,65 +3871,95 @@ require(amount > 0 && balances[msg.sender] >= amount);</code></pre>
 
                 <div class="tool-grid">
                     <div class="tool-card">
-                        <div class="tool-name">
-                            <a href="https://github.com/crytic/slither" target="_blank" rel="noopener noreferrer">Slither</a>
-                        </div>
+                        <div class="tool-name"><a href="https://github.com/crytic/slither" target="_blank" rel="noopener noreferrer">Slither</a></div>
                         <div class="tool-type">Static Analysis</div>
-                        <div class="tool-desc">Fast vulnerability detection</div>
+                        <div class="tool-desc">Fast, battle-tested vulnerability detection. Run first on every audit.</div>
                     </div>
                     <div class="tool-card">
-                        <div class="tool-name">
-                            <a href="https://github.com/Consensys/mythril" target="_blank" rel="noopener noreferrer">Mythril</a>
-                        </div>
-                        <div class="tool-type">Symbolic Execution</div>
-                        <div class="tool-desc">Deep vulnerability analysis</div>
+                        <div class="tool-name"><a href="https://github.com/Cyfrin/aderyn" target="_blank" rel="noopener noreferrer">Aderyn</a></div>
+                        <div class="tool-type">Static Analysis</div>
+                        <div class="tool-desc">Rust-based analyzer by Cyfrin. Fast, low false-positive rate.</div>
                     </div>
                     <div class="tool-card">
-                        <div class="tool-name">
-                            <a href="https://github.com/crytic/echidna" target="_blank" rel="noopener noreferrer">Echidna</a>
-                        </div>
+                        <div class="tool-name"><a href="https://github.com/crytic/echidna" target="_blank" rel="noopener noreferrer">Echidna</a></div>
                         <div class="tool-type">Fuzzer</div>
-                        <div class="tool-desc">Property-based testing</div>
+                        <div class="tool-desc">Property-based fuzzing with invariant testing support.</div>
                     </div>
                     <div class="tool-card">
-                        <div class="tool-name">
-                            <a href="https://book.getfoundry.sh/" target="_blank" rel="noopener noreferrer">Foundry</a>
-                        </div>
+                        <div class="tool-name"><a href="https://github.com/trailofbits/medusa" target="_blank" rel="noopener noreferrer">Medusa</a></div>
+                        <div class="tool-type">Fuzzer</div>
+                        <div class="tool-desc">Parallel fuzzer from Trail of Bits. Foundry-compatible output.</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-name"><a href="https://book.getfoundry.sh/" target="_blank" rel="noopener noreferrer">Foundry</a></div>
                         <div class="tool-type">Testing Framework</div>
-                        <div class="tool-desc">Fast tests + fuzzing</div>
+                        <div class="tool-desc">Industry-standard: unit tests, fuzz, fork testing, gas reports.</div>
                     </div>
                     <div class="tool-card">
-                        <div class="tool-name">
-                            <a href="https://www.certora.com/" target="_blank" rel="noopener noreferrer">Certora</a>
-                        </div>
+                        <div class="tool-name"><a href="https://github.com/a16z/halmos" target="_blank" rel="noopener noreferrer">Halmos</a></div>
+                        <div class="tool-type">Symbolic Execution</div>
+                        <div class="tool-desc">Symbolic testing for Foundry — proves properties over all inputs.</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-name"><a href="https://www.certora.com/" target="_blank" rel="noopener noreferrer">Certora</a></div>
                         <div class="tool-type">Formal Verification</div>
-                        <div class="tool-desc">Mathematical proofs</div>
+                        <div class="tool-desc">Mathematical proofs. Used by Aave, Compound, Uniswap.</div>
                     </div>
                     <div class="tool-card">
-                        <div class="tool-name">
-                            <a href="https://tenderly.co/" target="_blank" rel="noopener noreferrer">Tenderly</a>
-                        </div>
+                        <div class="tool-name"><a href="https://github.com/Consensys/mythril" target="_blank" rel="noopener noreferrer">Mythril</a></div>
+                        <div class="tool-type">Symbolic Execution</div>
+                        <div class="tool-desc">Deep vulnerability analysis via symbolic EVM execution.</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-name"><a href="https://tenderly.co/" target="_blank" rel="noopener noreferrer">Tenderly</a></div>
                         <div class="tool-type">Monitoring</div>
-                        <div class="tool-desc">Real-time alerts</div>
+                        <div class="tool-desc">Real-time alerts, transaction simulation, debugger.</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-name"><a href="https://defender.openzeppelin.com/" target="_blank" rel="noopener noreferrer">OZ Defender</a></div>
+                        <div class="tool-type">Monitoring</div>
+                        <div class="tool-desc">Automated smart contract monitoring and incident response.</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-name"><a href="https://github.com/ackeeblockchain/wake" target="_blank" rel="noopener noreferrer">Wake</a></div>
+                        <div class="tool-type">Static Analysis + Fuzzer</div>
+                        <div class="tool-desc">Data-flow analysis + fuzzing from Ackee Blockchain.</div>
+                    </div>
+                    <div class="tool-card">
+                        <div class="tool-name"><a href="https://immunefi.com/" target="_blank" rel="noopener noreferrer">Immunefi</a></div>
+                        <div class="tool-type">Bug Bounty</div>
+                        <div class="tool-desc">$3B+ in bounties. Launch post-audit for ongoing coverage.</div>
                     </div>
                 </div>
 
                 <div class="code-block">
                     <div class="code-header">
-                        <span class="code-label">Quick Commands</span>
+                        <span class="code-label">Recommended Audit Pipeline</span>
                         <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                     </div>
-                    <pre><code class="language-bash"># Slither
+                    <pre><code class="language-bash"># 1. Static analysis (run first — fast, high signal)
 slither . --print human-summary
+aderyn .
 
-# Mythril
-myth analyze contracts/MyContract.sol
+# 2. Compile + unit tests
+forge build
+forge test -vvv
 
-# Foundry fuzzing
-forge test --fuzz-runs 10000
+# 3. Fuzz testing (increase runs for critical contracts)
+forge test --fuzz-runs 100000
 
-# Echidna
-echidna-test . --contract MyContract</code></pre>
+# 4. Fork mainnet tests (test against real DeFi protocols)
+forge test --fork-url $ETH_RPC_URL --fuzz-runs 10000
+
+# 5. Symbolic execution (proves properties over all inputs)
+halmos --function test_invariant
+
+# 6. Gas report
+forge test --gas-report
+
+# 7. Check specific vulnerability class
+slither . --detect reentrancy-eth,reentrancy-no-eth,uninitialized-local
+slither . --detect arbitrary-send-eth,controlled-delegatecall</code></pre>
                 </div>
             </section>
 
@@ -2493,8 +3976,8 @@ echidna-test . --contract MyContract</code></pre>
                         <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                     </div>
                     <pre><code class="language-solidity">// Security
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 
 // Access Control
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -2612,7 +4095,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";</c
         <p>Made with 🔐 for the Ethereum community</p>
         <p style="margin-top: 0.5rem;">
             <a href="https://github.com" target="_blank">GitHub</a> ·
-            Last updated January 2026
+            Last updated March 2026
         </p>
     </footer>
 
@@ -2623,67 +4106,227 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";</c
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/solidity.min.js"></script>
 
     <script>
-        // Initialize syntax highlighting
+        // ── Syntax Highlighting ─────────────────────────────────────────────
         hljs.highlightAll();
 
-        // Copy code functionality
+        // ── Copy Code ────────────────────────────────────────────────────────
         function copyCode(button) {
-            const codeBlock = button.closest('.code-block').querySelector('code');
-            navigator.clipboard.writeText(codeBlock.textContent).then(() => {
+            const code = button.closest('.code-block').querySelector('code');
+            navigator.clipboard.writeText(code.textContent).then(() => {
                 button.classList.add('copied');
-                button.innerHTML = `
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                    Copied!
-                `;
+                button.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Copied!';
                 setTimeout(() => {
                     button.classList.remove('copied');
-                    button.innerHTML = `
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                        </svg>
-                        Copy
-                    `;
+                    button.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy';
                 }, 2000);
             });
         }
 
-        // Back to top button
+        // ── Dark / Light Mode ────────────────────────────────────────────────
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'light') {
+            document.documentElement.classList.add('light-mode');
+            themeToggle.textContent = '🌙';
+        }
+        themeToggle.addEventListener('click', () => {
+            const isLight = document.documentElement.classList.toggle('light-mode');
+            themeToggle.textContent = isLight ? '🌙' : '☀️';
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        });
+
+        // ── Mobile Sidebar ───────────────────────────────────────────────────
+        const hamburger = document.getElementById('hamburgerBtn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+
+        function openSidebar() {
+            sidebar.classList.add('mobile-open');
+            overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeSidebar() {
+            sidebar.classList.remove('mobile-open');
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        hamburger.addEventListener('click', () => {
+            sidebar.classList.contains('mobile-open') ? closeSidebar() : openSidebar();
+        });
+        overlay.addEventListener('click', closeSidebar);
+        sidebar.querySelectorAll('a').forEach(a => a.addEventListener('click', closeSidebar));
+
+        // ── Back to Top ──────────────────────────────────────────────────────
         const backToTop = document.querySelector('.back-to-top');
         window.addEventListener('scroll', () => {
-            if (window.scrollY > 500) {
-                backToTop.classList.add('visible');
-            } else {
-                backToTop.classList.remove('visible');
+            backToTop.classList.toggle('visible', window.scrollY > 500);
+        }, { passive: true });
+        function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+        // ── Active Nav Highlighting ──────────────────────────────────────────
+        const navLinks = document.querySelectorAll('.sidebar-nav a');
+        const allSections = document.querySelectorAll('section[id], article[id]');
+        window.addEventListener('scroll', () => {
+            let current = '';
+            allSections.forEach(s => {
+                if (scrollY >= s.offsetTop - 120) current = s.getAttribute('id');
+            });
+            navLinks.forEach(l => {
+                l.classList.toggle('active', l.getAttribute('href') === '#' + current);
+            });
+        }, { passive: true });
+
+        // ── Severity Filter Tabs ─────────────────────────────────────────────
+        const vulnCards = Array.from(document.querySelectorAll('.vuln-card[data-severity]'));
+
+        function updateFilterCounts() {
+            const counts = { All: vulnCards.length, Critical: 0, High: 0, Medium: 0 };
+            vulnCards.forEach(c => counts[c.dataset.severity]++);
+            document.getElementById('count-all').textContent = '(' + counts.All + ')';
+            document.getElementById('count-critical').textContent = '(' + counts.Critical + ')';
+            document.getElementById('count-high').textContent = '(' + counts.High + ')';
+            document.getElementById('count-medium').textContent = '(' + counts.Medium + ')';
+        }
+        updateFilterCounts();
+
+        let activeFilter = 'All';
+        let activeSearch = '';
+
+        function applyFilters() {
+            let visible = 0;
+            vulnCards.forEach(card => {
+                const matchFilter = activeFilter === 'All' || card.dataset.severity === activeFilter;
+                const text = (card.textContent || '').toLowerCase();
+                const matchSearch = !activeSearch || text.includes(activeSearch);
+                const show = matchFilter && matchSearch;
+                card.classList.toggle('hidden', !show);
+                if (show) visible++;
+            });
+            document.getElementById('searchEmpty').classList.toggle('visible', visible === 0 && (activeSearch || activeFilter !== 'All'));
+        }
+
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                activeFilter = tab.dataset.filter;
+                applyFilters();
+            });
+        });
+
+        // ── Search Bar ───────────────────────────────────────────────────────
+        const searchInput = document.getElementById('searchInput');
+        const searchClear = document.getElementById('searchClear');
+
+        searchInput.addEventListener('input', () => {
+            activeSearch = searchInput.value.trim().toLowerCase();
+            searchClear.classList.toggle('visible', activeSearch.length > 0);
+            applyFilters();
+        });
+
+        searchClear.addEventListener('click', () => {
+            searchInput.value = '';
+            activeSearch = '';
+            searchClear.classList.remove('visible');
+            applyFilters();
+        });
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && activeSearch) {
+                searchInput.value = '';
+                activeSearch = '';
+                searchClear.classList.remove('visible');
+                applyFilters();
             }
         });
 
-        function scrollToTop() {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+        // ── Interactive Checklist (Security Checklist) ───────────────────────
+        const CHECKLIST_KEY = 'solidity_checklist_v1';
+        let checklistState = JSON.parse(localStorage.getItem(CHECKLIST_KEY) || '{}');
+
+        function initChecklist() {
+            const items = document.querySelectorAll('#checklist .checklist-item');
+            const total = items.length;
+
+            // Add progress bar
+            const sections = document.querySelectorAll('#checklist .checklist');
+            const firstSection = sections[0];
+            if (firstSection) {
+                const progressEl = document.createElement('div');
+                progressEl.className = 'checklist-progress';
+                progressEl.innerHTML = '<div class="progress-bar-wrapper"><div class="progress-bar-fill" id="checklistBar"></div></div><span class="progress-text" id="checklistText">0 / ' + total + '</span><button class="checklist-reset" onclick="resetChecklist()">Reset</button>';
+                firstSection.parentNode.insertBefore(progressEl, firstSection);
+            }
+
+            items.forEach((item, i) => {
+                const id = 'check_' + i;
+                const box = item.querySelector('.checkbox');
+                if (checklistState[id]) {
+                    box.classList.add('checked');
+                    item.classList.add('done');
+                }
+                item.addEventListener('click', () => {
+                    const isChecked = box.classList.toggle('checked');
+                    item.classList.toggle('done', isChecked);
+                    checklistState[id] = isChecked;
+                    localStorage.setItem(CHECKLIST_KEY, JSON.stringify(checklistState));
+                    updateChecklistProgress(items);
+                });
+            });
+            updateChecklistProgress(items);
         }
 
-        // Active nav link highlighting
-        const navLinks = document.querySelectorAll('.sidebar-nav a');
-        const sections = document.querySelectorAll('section, article');
+        function updateChecklistProgress(items) {
+            const done = document.querySelectorAll('#checklist .checkbox.checked').length;
+            const total = items.length;
+            const pct = total ? Math.round(done / total * 100) : 0;
+            const bar = document.getElementById('checklistBar');
+            const text = document.getElementById('checklistText');
+            if (bar) bar.style.width = pct + '%';
+            if (text) text.textContent = done + ' / ' + total;
+        }
 
-        window.addEventListener('scroll', () => {
-            let current = '';
-            sections.forEach(section => {
-                const sectionTop = section.offsetTop;
-                if (scrollY >= sectionTop - 100) {
-                    current = section.getAttribute('id');
-                }
-            });
+        function resetChecklist() {
+            checklistState = {};
+            localStorage.removeItem(CHECKLIST_KEY);
+            document.querySelectorAll('#checklist .checkbox').forEach(b => b.classList.remove('checked'));
+            document.querySelectorAll('#checklist .checklist-item').forEach(i => i.classList.remove('done'));
+            updateChecklistProgress(document.querySelectorAll('#checklist .checklist-item'));
+        }
 
-            navLinks.forEach(link => {
-                link.classList.remove('active');
-                if (link.getAttribute('href') === `#${current}`) {
-                    link.classList.add('active');
-                }
+        // ── DeFi Checklist Tabs ──────────────────────────────────────────────
+        const DEFI_KEY = 'solidity_defi_checklist_v1';
+        let defiState = JSON.parse(localStorage.getItem(DEFI_KEY) || '{}');
+
+        document.querySelectorAll('.defi-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const panel = tab.dataset.panel;
+                document.querySelectorAll('.defi-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.defi-panel').forEach(p => p.classList.remove('active'));
+                tab.classList.add('active');
+                const panelEl = document.getElementById('panel-' + panel);
+                if (panelEl) panelEl.classList.add('active');
             });
         });
+
+        document.querySelectorAll('.defi-checklist-item').forEach((item, i) => {
+            const id = 'defi_' + i;
+            const box = item.querySelector('.defi-checkbox');
+            if (defiState[id]) {
+                box.classList.add('checked');
+                item.classList.add('done');
+            }
+            item.addEventListener('click', () => {
+                const isChecked = box.classList.toggle('checked');
+                item.classList.toggle('done', isChecked);
+                defiState[id] = isChecked;
+                localStorage.setItem(DEFI_KEY, JSON.stringify(defiState));
+            });
+        });
+
+        // ── Init ─────────────────────────────────────────────────────────────
+        initChecklist();
     </script>
 </body>
 </html>

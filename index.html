@@ -1820,6 +1820,7 @@
                 <div class="section-header">
                     <h2><span class="icon">💀</span> Real-World Exploits</h2>
                     <p>Major DeFi exploits — the vulnerability class that caused each one.</p>
+                    <button class="copy-md-btn" id="copyExploits">Copy as Markdown</button>
                 </div>
 
                 <div class="table-wrapper">
@@ -6016,6 +6017,37 @@ function _update(address from, address to, uint256 amount) internal override {
                     if (descClone) descClone.querySelectorAll('a').forEach(a => a.remove());
                     const desc = descClone ? descClone.textContent.trim().replace(/\s+/g, ' ') : '';
                     md += `| \`${code}\` | ${desc} |\n`;
+                });
+                navigator.clipboard.writeText(md).then(() => {
+                    const toast = document.getElementById('copyToast');
+                    toast.classList.add('visible');
+                    setTimeout(() => toast.classList.remove('visible'), 2000);
+                }).catch(() => {
+                    const toast = document.getElementById('copyToast');
+                    toast.textContent = 'Copy failed — use HTTPS';
+                    toast.classList.add('visible');
+                    setTimeout(() => {
+                        toast.classList.remove('visible');
+                        toast.textContent = 'Copied to clipboard';
+                    }, 3000);
+                });
+            });
+        }
+
+        const copyExploitsBtn = document.getElementById('copyExploits');
+        if (copyExploitsBtn) {
+            copyExploitsBtn.addEventListener('click', () => {
+                const rows = document.querySelectorAll('#exploits .exploit-table tbody tr');
+                let md = '| Protocol | Year | Loss | Vulnerability | Summary |\n';
+                md += '|----------|------|------|---------------|---------|\n';
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    const protocol = cells[0]?.textContent.trim() || '';
+                    const year     = cells[1]?.textContent.trim() || '';
+                    const loss     = cells[2]?.textContent.trim() || '';
+                    const vuln     = cells[3]?.textContent.trim() || '';
+                    const summary  = cells[4]?.textContent.trim().replace(/\s+/g, ' ') || '';
+                    md += `| ${protocol} | ${year} | ${loss} | ${vuln} | ${summary} |\n`;
                 });
                 navigator.clipboard.writeText(md).then(() => {
                     const toast = document.getElementById('copyToast');

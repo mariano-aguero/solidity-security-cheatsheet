@@ -5328,6 +5328,7 @@ contract FlashLoanFeeAccumulator {
                 <div class="section-header">
                     <h2><span class="icon">🔧</span> Security Tools</h2>
                     <p>Essential tools for smart contract security.</p>
+                    <button class="copy-md-btn" id="copyTools">Copy as Markdown</button>
                 </div>
 
                 <div class="tool-grid">
@@ -6048,6 +6049,33 @@ function _update(address from, address to, uint256 amount) internal override {
                     const vuln     = cells[3]?.textContent.trim() || '';
                     const summary  = cells[4]?.textContent.trim().replace(/\s+/g, ' ') || '';
                     md += `| ${protocol} | ${year} | ${loss} | ${vuln} | ${summary} |\n`;
+                });
+                navigator.clipboard.writeText(md).then(() => {
+                    const toast = document.getElementById('copyToast');
+                    toast.classList.add('visible');
+                    setTimeout(() => toast.classList.remove('visible'), 2000);
+                }).catch(() => {
+                    const toast = document.getElementById('copyToast');
+                    toast.textContent = 'Copy failed — use HTTPS';
+                    toast.classList.add('visible');
+                    setTimeout(() => {
+                        toast.classList.remove('visible');
+                        toast.textContent = 'Copied to clipboard';
+                    }, 3000);
+                });
+            });
+        }
+
+        const copyToolsBtn = document.getElementById('copyTools');
+        if (copyToolsBtn) {
+            copyToolsBtn.addEventListener('click', () => {
+                const cards = document.querySelectorAll('#tools .tool-card');
+                let md = '| Tool | Type | Description |\n|------|------|-------------|\n';
+                cards.forEach(card => {
+                    const name = card.querySelector('.tool-name a')?.textContent.trim() || '';
+                    const type = card.querySelector('.tool-type')?.textContent.trim() || '';
+                    const desc = card.querySelector('.tool-desc')?.textContent.trim().replace(/\s+/g, ' ') || '';
+                    md += `| ${name} | ${type} | ${desc} |\n`;
                 });
                 navigator.clipboard.writeText(md).then(() => {
                     const toast = document.getElementById('copyToast');

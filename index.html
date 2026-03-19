@@ -58,6 +58,7 @@
             --border-glow: rgba(0, 255, 136, 0.3);
             --gradient-main: linear-gradient(135deg, #00ff88 0%, #00d4ff 100%);
             --shadow-glow: 0 0 40px rgba(0, 255, 136, 0.15);
+            --font-mono: 'JetBrains Mono', monospace;
         }
 
         * {
@@ -976,6 +977,22 @@
             color: var(--accent-primary);
         }
 
+        .shortcuts-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .shortcuts-btn:hover { border-color: var(--accent-primary); color: var(--accent-primary); }
+
         /* === MOBILE HAMBURGER === */
         .hamburger-btn {
             display: none;
@@ -1123,6 +1140,82 @@
             color: var(--bg-primary);
             font-weight: 600;
         }
+
+        /* ── Copy-as-MD button & toast ─────────────────────────────── */
+        .copy-md-btn {
+            background: transparent;
+            border: 1px solid var(--border-glow);
+            color: var(--accent-primary);
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: var(--font-mono);
+        }
+        .copy-md-btn:hover { border-color: var(--accent-primary); background: rgba(0,255,136,0.08); }
+        .copy-toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(1rem);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--accent-primary);
+            color: var(--accent-primary);
+            padding: 0.5rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s, transform 0.2s;
+            z-index: 9999;
+        }
+        .copy-toast.visible {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ── Shortcuts Overlay ──────────────────────────────────────── */
+        .shortcuts-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+        .shortcuts-overlay.visible { display: flex; }
+        .shortcuts-modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem 2rem;
+            min-width: 320px;
+            max-width: 420px;
+        }
+        .shortcuts-modal h3 {
+            margin: 0 0 1rem;
+            font-size: 1rem;
+            color: var(--accent-primary);
+        }
+        .shortcuts-table { width: 100%; border-collapse: collapse; }
+        .shortcuts-table tr td { padding: 0.4rem 0; font-size: 0.85rem; }
+        .shortcuts-table td:first-child {
+            font-family: var(--font-mono);
+            color: var(--accent-secondary);
+            width: 40%;
+        }
+        .shortcuts-table td:last-child { color: var(--text-secondary); }
+        .shortcuts-close {
+            display: block;
+            margin-top: 1rem;
+            text-align: right;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+        .shortcuts-close:hover { color: var(--text-primary); }
 
         /* Reading time badge */
         .read-time {
@@ -1521,6 +1614,7 @@
             Solidity Security
         </div>
         <div class="header-links">
+            <button class="shortcuts-btn" id="shortcutsBtnHeader" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
             <div class="search-wrapper">
                 <input type="text" class="search-input" id="searchInput" placeholder="Search vulnerabilities… (press /)" autocomplete="off">
                 <button class="search-clear" id="searchClear" aria-label="Clear search">×</button>
@@ -1589,6 +1683,8 @@
                     <a href="#mev-frontrunning"><span class="nav-icon">⚡</span> MEV & Frontrunning</a>
                     <a href="#precision-loss"><span class="nav-icon">🔢</span> Precision Errors</a>
                     <a href="#governance-attacks"><span class="nav-icon">🗳️</span> Governance Attacks</a>
+                    <a href="#storage-layout"><span class="nav-icon">🗄️</span> Storage Layout</a>
+                    <a href="#vyper-security"><span class="nav-icon">🐍</span> Vyper Security</a>
                 </nav>
             </div>
 
@@ -1623,7 +1719,7 @@
             <!-- Hero -->
             <section class="hero" id="overview">
                 <div class="hero-badge">
-                    <span>🔒</span> Security Reference Guide &nbsp;·&nbsp; v2.2 &nbsp;·&nbsp; March 2026
+                    <span>🔒</span> Security Reference Guide &nbsp;·&nbsp; v2.3 &nbsp;·&nbsp; March 2026
                 </div>
                 <h1>
                     Solidity <span class="gradient">Security</span><br>Cheatsheet
@@ -1656,6 +1752,7 @@
                 <div class="section-header">
                     <h2><span class="icon">⚡</span> 60-Second Red Flags</h2>
                     <p>Scan for these patterns immediately when reviewing any contract. Each one warrants deeper investigation.</p>
+                    <button class="copy-md-btn" id="copyRedFlags">Copy as Markdown</button>
                 </div>
 
                 <div class="quick-scan-grid">
@@ -4542,6 +4639,184 @@ contract SecureGovernance is
                 </article>
             </section>
 
+            <!-- Storage Layout / ERC-7201 -->
+            <section id="storage-layout">
+                <div class="section-header">
+                    <h2><span class="icon">🗄️</span> Storage Layout & Upgrade Safety</h2>
+                    <p>Storage slot collisions and layout corruption are silent killers in upgradeable contracts.</p>
+                </div>
+
+                <article class="vuln-card" id="storage-erc7201" data-severity="High" data-type="Infrastructure">
+                    <div class="vuln-header">
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">Storage Collision & Layout Corruption</h3>
+                            <p class="vuln-subtitle">Variables overwrite each other across upgrades or proxy boundaries</p>
+                        </div>
+                        <span class="severity-badge severity-high">High</span>
+                    </div>
+                    <p>Upgradeable contracts share storage between proxy and implementation. Adding, removing, or reordering state variables in an upgrade corrupts all existing data. Even inheritance order changes can shift slot assignments. ERC-7201 namespaced storage eliminates this class of bug entirely.</p>
+                    <div class="impact-box">
+                        <strong>Root Cause:</strong> Solidity assigns storage slots sequentially (slot 0, 1, 2…). Any change to variable order or count between upgrades misaligns slots in the live proxy. With <code>delegatecall</code>, proxy admin variables can also collide with implementation storage at the same slots.
+                    </div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ VULNERABLE — storage layout corruption on upgrade</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">// V1
+contract TokenV1 {
+    address public owner;   // slot 0
+    uint256 public supply;  // slot 1
+}
+
+// V2 — BAD: inserted variable shifts slots
+contract TokenV2 {
+    address public owner;   // slot 0
+    uint256 public paused;  // slot 1  ← NEW: supply now reads garbage
+    uint256 public supply;  // slot 2  ← was slot 1!
+}
+
+// Any read of `supply` after upgrade returns corrupted data</code></pre>
+                    </div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SAFE — ERC-7201 namespaced storage</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-solidity">// ERC-7201: slot = keccak256(abi.encode(uint256(keccak256("myapp.token")) - 1)) &amp; ~bytes32(uint256(0xff))
+// Computed once off-chain, never changes between upgrades
+
+/// @custom:storage-location erc7201:myapp.token
+contract TokenV1 {
+    struct Storage {
+        address owner;
+        uint256 supply;
+    }
+
+    // Replace with actual computed value: cast keccak "myapp.token" | forge script
+    bytes32 private constant STORAGE_SLOT =
+        0x1234abcd00000000000000000000000000000000000000000000000000000000; // illustrative — compute yours
+
+    function _getStorage() private pure returns (Storage storage s) {
+        assembly { s.slot := STORAGE_SLOT }
+    }
+}
+
+// V2: append fields to struct — existing slots are never affected
+struct Storage {
+    address owner;
+    uint256 supply;
+    bool paused;   // ← appended safely, no collision
+}</code></pre>
+                    </div>
+                    <div class="prevention-list">
+                        <h4>🛡️ Prevention</h4>
+                        <ul>
+                            <li>Use <strong>ERC-7201 namespaced storage</strong> for all upgradeable contracts — compile with <code>@custom:storage-location</code> annotation</li>
+                            <li>Never remove or reorder variables in a storage struct — only append</li>
+                            <li>Use <code>openzeppelin-upgrades</code> plugin storage layout checks: will fail the build on unsafe upgrades</li>
+                            <li>For proxy admin slots: use EIP-1967 standard slots (<code>0x360894...implementation</code>, <code>0xb53127...admin</code>)</li>
+                            <li>Run <code>forge inspect ContractName storage-layout</code> before every upgrade and diff against the previous version</li>
+                        </ul>
+                    </div>
+                </article>
+            </section>
+
+            <!-- Vyper-Specific Vulnerabilities -->
+            <section id="vyper-security">
+                <div class="section-header">
+                    <h2><span class="icon">🐍</span> Vyper-Specific Vulnerabilities</h2>
+                    <p>Vyper compiler bugs and language-level traps distinct from Solidity. Relevant for auditing Curve, Velodrome, and other Vyper-based protocols.</p>
+                </div>
+
+                <article class="vuln-card" id="vyper-vulns" data-severity="High" data-type="Infrastructure">
+                    <div class="vuln-header">
+                        <div class="vuln-title-wrap">
+                            <h3 class="vuln-title">Vyper Compiler Bugs & Language Traps</h3>
+                            <p class="vuln-subtitle">Reentrancy guards, bounds checks, and visibility bugs in specific Vyper versions</p>
+                        </div>
+                        <span class="severity-badge severity-high">High</span>
+                    </div>
+                    <p>The Curve Finance exploit (August 2023, ~$73M) was caused by a reentrancy guard failure in Vyper versions <code>0.2.15</code>, <code>0.3.0</code>, and <code>0.3.1</code>. Separate compiler bugs in older versions affect storage array bounds checking. Always verify which Vyper version a contract was compiled with before auditing.</p>
+                    <div class="impact-box">
+                        <strong>Compiler version matters:</strong> Bug 1 (reentrancy guard) — fixed in 0.3.2+. Bug 2 (array bounds) — fixed in 0.3.10. Default external visibility is not a bug but a language design difference that surprises Solidity developers.
+                    </div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ VULNERABLE — Vyper ≤0.3.1 @nonreentrant bug</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-python"># Compiled with Vyper 0.3.0 or 0.3.1
+# @nonreentrant guard is BROKEN — mutex write happens after the call
+
+interface Pool:
+    def remove_liquidity() -> uint256: nonpayable
+
+@external
+@nonreentrant("lock")   # guard fails in these versions
+def withdraw(amount: uint256):
+    # Attacker can re-enter here before lock is set
+    Pool(self.pool).remove_liquidity()
+    self.balances[msg.sender] -= amount</code></pre>
+                    </div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SAFE — Vyper 0.3.10+ with CEI pattern</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-python"># Use Vyper 0.3.10+ (check: vyper --version)
+# Defense-in-depth: apply CEI regardless of @nonreentrant
+
+@external
+@nonreentrant("lock")   # fixed in 0.3.10+
+def withdraw(amount: uint256):
+    # Checks
+    assert self.balances[msg.sender] >= amount
+    # Effects — state updated BEFORE external call
+    self.balances[msg.sender] -= amount
+    # Interactions
+    send(msg.sender, amount)</code></pre>
+                    </div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ Visibility trap — function exposed externally</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-python"># In Vyper, all functions are external by default
+# No "private" or "internal" visibility unless explicitly declared
+
+def _compute_fee(amount: uint256) -> uint256:   # exposed externally!
+    return amount * self.fee_rate / 10000
+
+# Anyone can call _compute_fee() directly</code></pre>
+                    </div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ Use @internal decorator explicitly</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-python">@internal
+def _compute_fee(amount: uint256) -> uint256:   # truly internal
+    return amount * self.fee_rate / 10000
+
+@external
+def swap(amount: uint256) -> uint256:
+    fee: uint256 = self._compute_fee(amount)    # self. prefix required
+    return amount - fee</code></pre>
+                    </div>
+                    <div class="prevention-list">
+                        <h4>🛡️ Prevention</h4>
+                        <ul>
+                            <li><strong>Check compiler version:</strong> <code>vyper --version</code> — avoid 0.2.15, 0.3.0, 0.3.1 for contracts using <code>@nonreentrant</code></li>
+                            <li>Apply CEI pattern as defense-in-depth regardless of <code>@nonreentrant</code></li>
+                            <li>Mark all internal helpers <code>@internal</code> — don't rely on naming convention (<code>_prefix</code>)</li>
+                            <li>Use <a href="https://github.com/crytic/caracal" target="_blank" rel="noopener noreferrer">Caracal</a> (Trail of Bits) for Vyper static analysis</li>
+                            <li>Check <a href="https://github.com/vyperlang/vyper/security/advisories" target="_blank" rel="noopener noreferrer">Vyper security advisories</a> for the exact compiler version before auditing</li>
+                        </ul>
+                    </div>
+                </article>
+            </section>
+
             <!-- Security Patterns -->
             <section id="patterns">
                 <div class="section-header">
@@ -5286,6 +5561,18 @@ function _update(address from, address to, uint256 amount) internal override {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/solidity.min.js"></script>
 
+    <div class="copy-toast" id="copyToast">Copied to clipboard</div>
+    <div class="shortcuts-overlay" id="shortcutsOverlay">
+        <div class="shortcuts-modal">
+            <h3>Keyboard Shortcuts</h3>
+            <table class="shortcuts-table">
+                <tr><td>/</td><td>Focus search bar</td></tr>
+                <tr><td>Escape</td><td>Clear search / close overlay</td></tr>
+                <tr><td>?</td><td>Toggle this shortcuts overlay</td></tr>
+            </table>
+            <span class="shortcuts-close" id="shortcutsClose">Press Escape or click to close</span>
+        </div>
+    </div>
     <script>
         // ── Syntax Highlighting ─────────────────────────────────────────────
         hljs.highlightAll();
@@ -5384,25 +5671,13 @@ function _update(address from, address to, uint256 amount) internal override {
         let activeFilter = 'All';
         let activeSearch = '';
 
-        function applyFilters() {
-            let visible = 0;
-            vulnCards.forEach(card => {
-                const matchFilter = activeFilter === 'All' || card.dataset.severity === activeFilter;
-                const text = (card.textContent || '').toLowerCase();
-                const matchSearch = !activeSearch || text.includes(activeSearch);
-                const show = matchFilter && matchSearch;
-                card.classList.toggle('hidden', !show);
-                if (show) visible++;
-            });
-            document.getElementById('searchEmpty').classList.toggle('visible', visible === 0 && (activeSearch || activeFilter !== 'All'));
-        }
-
         document.querySelectorAll('.filter-tab').forEach(tab => {
             tab.addEventListener('click', () => {
                 document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
                 activeFilter = tab.dataset.filter;
                 applyFilters();
+                syncFiltersToURL();
             });
         });
 
@@ -5423,18 +5698,31 @@ function _update(address from, address to, uint256 amount) internal override {
             applyFilters();
         });
 
+        const shortcutsOverlay = document.getElementById('shortcutsOverlay');
+        document.getElementById('shortcutsClose').addEventListener('click', () => shortcutsOverlay.classList.remove('visible'));
+        shortcutsOverlay.addEventListener('click', e => { if (e.target === shortcutsOverlay) shortcutsOverlay.classList.remove('visible'); });
+        document.getElementById('shortcutsBtnHeader').addEventListener('click', () => shortcutsOverlay.classList.toggle('visible'));
+
         document.addEventListener('keydown', e => {
-            if (e.key === 'Escape' && activeSearch) {
-                searchInput.value = '';
-                activeSearch = '';
-                searchClear.classList.remove('visible');
-                applyFilters();
+            const inInput = document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA';
+            if (e.key === 'Escape') {
+                if (shortcutsOverlay.classList.contains('visible')) {
+                    shortcutsOverlay.classList.remove('visible');
+                } else if (activeSearch) {
+                    searchInput.value = '';
+                    activeSearch = '';
+                    searchClear.classList.remove('visible');
+                    applyFilters();
+                }
             }
-            // '/' to focus search (skip if already in an input)
-            if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+            if (e.key === '/' && !inInput) {
                 e.preventDefault();
                 searchInput.focus();
                 searchInput.select();
+            }
+            if (e.key === '?' && !inInput) {
+                e.preventDefault();
+                shortcutsOverlay.classList.toggle('visible');
             }
         });
 
@@ -5531,6 +5819,8 @@ function _update(address from, address to, uint256 amount) internal override {
             'signature': 'General',        'external-calls': 'General',
             'timestamp': 'General',        'randomness': 'General',
             'force-feeding': 'General',    'storage-collision': 'Infrastructure',
+            'storage-erc7201': 'Infrastructure',
+            'vyper-vulns': 'Infrastructure',
             'flash-loans': 'DeFi',         'vault-inflation': 'DeFi',
             'proxy-vulns': 'Infrastructure','slippage': 'DeFi',
             'fee-on-transfer': 'DeFi',     'centralization': 'Infrastructure',
@@ -5546,6 +5836,34 @@ function _update(address from, address to, uint256 amount) internal override {
 
         // ── Type Filter Tabs ─────────────────────────────────────────────────
         let activeType = 'All';
+
+        function syncFiltersToURL() {
+            const params = new URLSearchParams();
+            if (activeFilter !== 'All') params.set('s', activeFilter);
+            if (activeType !== 'All') params.set('t', activeType);
+            const str = params.toString();
+            history.replaceState(null, '', str ? '?' + str : location.pathname + location.hash);
+        }
+
+        // Read URL params on load
+        (function initFromURL() {
+            const p = new URLSearchParams(location.search);
+            const s = p.get('s');
+            const t = p.get('t');
+            if (s && ['Critical','High','Medium'].includes(s)) {
+                activeFilter = s;
+                document.querySelectorAll('.filter-tab').forEach(tab => {
+                    tab.classList.toggle('active', tab.dataset.filter === s);
+                });
+            }
+            if (t && ['General','DeFi','NFT','Infrastructure'].includes(t)) {
+                activeType = t;
+                document.querySelectorAll('.type-tab').forEach(tab => {
+                    tab.classList.toggle('active', tab.dataset.type === t);
+                });
+            }
+            applyFilters();
+        })();
 
         function applyFilters() {
             let visible = 0;
@@ -5570,6 +5888,7 @@ function _update(address from, address to, uint256 amount) internal override {
                 tab.classList.add('active');
                 activeType = tab.dataset.type;
                 applyFilters();
+                syncFiltersToURL();
             });
         });
         // Note: severity filter tabs and search already call applyFilters() by name —
@@ -5628,6 +5947,36 @@ function _update(address from, address to, uint256 amount) internal override {
             });
             header.appendChild(shareBtn);
         });
+
+        // ── Copy Red Flags as Markdown ────────────────────────────────────────
+        const copyRedFlagsBtn = document.getElementById('copyRedFlags');
+        if (copyRedFlagsBtn) {
+            copyRedFlagsBtn.addEventListener('click', () => {
+                const rows = document.querySelectorAll('#quick-scan .red-flag-row');
+                let md = '| Pattern | Description |\n|---------|-------------|\n';
+                rows.forEach(row => {
+                    const code = row.querySelector('.red-flag-code')?.textContent.trim() || '';
+                    const descEl = row.querySelector('.red-flag-desc');
+                    const descClone = descEl ? descEl.cloneNode(true) : null;
+                    if (descClone) descClone.querySelectorAll('a').forEach(a => a.remove());
+                    const desc = descClone ? descClone.textContent.trim().replace(/\s+/g, ' ') : '';
+                    md += `| \`${code}\` | ${desc} |\n`;
+                });
+                navigator.clipboard.writeText(md).then(() => {
+                    const toast = document.getElementById('copyToast');
+                    toast.classList.add('visible');
+                    setTimeout(() => toast.classList.remove('visible'), 2000);
+                }).catch(() => {
+                    const toast = document.getElementById('copyToast');
+                    toast.textContent = 'Copy failed — use HTTPS';
+                    toast.classList.add('visible');
+                    setTimeout(() => {
+                        toast.classList.remove('visible');
+                        toast.textContent = 'Copied to clipboard';
+                    }, 3000);
+                });
+            });
+        }
 
         // ── Init ─────────────────────────────────────────────────────────────
         initChecklist();

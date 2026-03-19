@@ -256,6 +256,37 @@
             border-left-color: var(--accent-primary);
         }
 
+        .sidebar-filter-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+            padding: 0 1.5rem 0.75rem;
+        }
+
+        .sidebar-filter-chip {
+            font-size: 0.68rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            cursor: pointer;
+            text-decoration: none;
+            background: none;
+            font-family: inherit;
+            transition: border-color 0.2s, color 0.2s, background 0.2s;
+        }
+
+        .sidebar-filter-chip:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        .sidebar-filter-chip.active {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            background: rgba(0,255,136,0.1);
+        }
+
         .nav-icon {
             font-size: 1rem;
             width: 20px;
@@ -1530,7 +1561,7 @@
         @media print {
             header, .sidebar, .sidebar-overlay, .back-to-top,
             .hamburger-btn, .search-wrapper, .theme-toggle,
-            .copy-btn, .severity-filters, .defi-tabs,
+            .copy-btn, .copy-md-btn, .share-btn, .severity-filters, .defi-tabs,
             .checklist-progress, .checklist-reset { display: none !important; }
 
             body::before { display: none; }
@@ -1649,6 +1680,13 @@
 
             <div class="sidebar-section">
                 <div class="sidebar-title">Vulnerabilities</div>
+                <div class="sidebar-filter-chips">
+                    <button class="sidebar-filter-chip active" data-vuln-filter="All">All</button>
+                    <button class="sidebar-filter-chip" data-vuln-filter="General">General</button>
+                    <button class="sidebar-filter-chip" data-vuln-filter="DeFi">DeFi</button>
+                    <button class="sidebar-filter-chip" data-vuln-filter="NFT">NFT</button>
+                    <button class="sidebar-filter-chip" data-vuln-filter="Infrastructure">Infra</button>
+                </div>
                 <nav class="sidebar-nav">
                     <a href="#reentrancy"><span class="nav-icon">🔄</span> Reentrancy</a>
                     <a href="#overflow"><span class="nav-icon">💥</span> Integer Overflow</a>
@@ -5950,6 +5988,27 @@ function _update(address from, address to, uint256 amount) internal override {
         });
         // Note: severity filter tabs and search already call applyFilters() by name —
         // redefining applyFilters() above is sufficient; no re-wiring needed.
+
+        // ── Sidebar filter chips ──────────────────────────────────────────────
+        document.querySelectorAll('.sidebar-filter-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                const type = chip.dataset.vulnFilter;
+                activeType = type;
+                document.querySelectorAll('.type-tab').forEach(t => {
+                    t.classList.toggle('active', t.dataset.type === type);
+                });
+                document.querySelectorAll('.sidebar-filter-chip').forEach(c => {
+                    c.classList.toggle('active', c.dataset.vulnFilter === type);
+                });
+                applyFilters();
+                syncFiltersToURL();
+                document.getElementById('vulnerabilities')?.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+        // Sync chip highlight to URL-restored activeType on load
+        document.querySelectorAll('.sidebar-filter-chip').forEach(c => {
+            c.classList.toggle('active', c.dataset.vulnFilter === activeType);
+        });
 
         // ── Reading Time + Share Button (safe DOM methods) ────────────────────
         function makeShareSVG() {

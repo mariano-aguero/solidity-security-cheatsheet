@@ -4683,8 +4683,16 @@ contract TokenV2 {
                             <span class="code-label secure">✅ SAFE — ERC-7201 namespaced storage</span>
                             <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                         </div>
-                        <pre><code class="language-solidity">// ERC-7201: slot = keccak256(abi.encode(uint256(keccak256("myapp.token")) - 1)) &amp; ~bytes32(uint256(0xff))
-// Computed once off-chain, never changes between upgrades
+                        <pre><code class="language-solidity">// ERC-7201 slot derivation for namespace "myapp.token":
+//   step1 = keccak256("myapp.token")
+//         = 0x0fbb530e278cf02fabe397241e0478e88e1725734c1d57f114ea6e066bb511c5
+//   step2 = uint256(step1) - 1
+//         = 0x0fbb530e278cf02fabe397241e0478e88e1725734c1d57f114ea6e066bb511c4
+//   step3 = keccak256(abi.encode(step2))
+//         = 0xc5931595df26e906cf0fabbadc4d8be3ce96e21534f481c018d2816917a93d26
+//   slot  = step3 &amp; ~bytes32(uint256(0xff))   // clear last byte
+//         = 0xc5931595df26e906cf0fabbadc4d8be3ce96e21534f481c018d2816917a93d00
+// Verify: cast keccak "myapp.token" → step1; cast keccak &lt;step2_as_bytes32&gt; → step3
 
 /// @custom:storage-location erc7201:myapp.token
 contract TokenV1 {
@@ -4693,9 +4701,8 @@ contract TokenV1 {
         uint256 supply;
     }
 
-    // Replace with actual computed value: cast keccak "myapp.token" | forge script
     bytes32 private constant STORAGE_SLOT =
-        0x1234abcd00000000000000000000000000000000000000000000000000000000; // illustrative — compute yours
+        0xc5931595df26e906cf0fabbadc4d8be3ce96e21534f481c018d2816917a93d00;
 
     function _getStorage() private pure returns (Storage storage s) {
         assembly { s.slot := STORAGE_SLOT }
@@ -4776,6 +4783,54 @@ def withdraw(amount: uint256):
     self.balances[msg.sender] -= amount
     # Interactions
     send(msg.sender, amount)</code></pre>
+                    </div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label vulnerable">❌ VULNERABLE — DynArray bounds bypass (Vyper &lt;0.3.10)</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-python"># Vyper &lt;0.3.10: bounds check uses MAX_SIZE, not len(arr) at runtime
+# DynArray[address, 500] — 500 slots allocated, only 5 stored
+whitelist: DynArray[address, 500]
+owner: address                        # storage slot AFTER whitelist block
+
+@external
+def add(addr: address):
+    self.whitelist.append(addr)       # stores at indices 0..4 (len=5)
+
+@external
+@view
+def get(idx: uint256) -> address:
+    return self.whitelist[idx]        # SHOULD revert at idx&gt;=5, but doesn't!
+                                      # idx=5..499 reads uninitialised storage
+                                      # idx overlapping owner slot leaks self.owner
+
+@external
+def corrupt(idx: uint256, addr: address):
+    self.whitelist[idx] = addr        # WRITE to arbitrary storage slot
+                                      # self.whitelist[499] may overwrite self.owner</code></pre>
+                    </div>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-label secure">✅ SAFE — explicit bounds guard (all Vyper versions)</span>
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                        </div>
+                        <pre><code class="language-python"># Defense: always assert idx &lt; len(arr) before indexed access
+# Safe regardless of Vyper version — never rely on compiler bounds alone
+
+@external
+@view
+def get(idx: uint256) -> address:
+    assert idx &lt; len(self.whitelist), "out of bounds"
+    return self.whitelist[idx]
+
+@external
+def update(idx: uint256, addr: address):
+    assert idx &lt; len(self.whitelist), "out of bounds"
+    self.whitelist[idx] = addr
+
+# If on Vyper &gt;=0.3.10 the compiler also checks, but explicit asserts
+# give better error messages and survive future refactors</code></pre>
                     </div>
                     <div class="code-block">
                         <div class="code-header">
